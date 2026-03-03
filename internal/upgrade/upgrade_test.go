@@ -19,7 +19,7 @@ import (
 	"testing"
 )
 
-// ─── semver tests ──────────────────────────────────────────────────────────
+// semver tests
 
 func TestParseSemver(t *testing.T) {
 	tests := []struct {
@@ -92,7 +92,7 @@ func TestCompareVersions(t *testing.T) {
 	}
 }
 
-// ─── PlatformKey tests ────────────────────────────────────────────────────
+// PlatformKey tests
 
 func TestPlatformKey(t *testing.T) {
 	key := PlatformKey()
@@ -102,7 +102,7 @@ func TestPlatformKey(t *testing.T) {
 	}
 }
 
-// ─── Manifest parsing tests ──────────────────────────────────────────────
+// Manifest parsing tests
 
 func TestParseManifest(t *testing.T) {
 	data := `{
@@ -149,7 +149,7 @@ func TestParseManifest(t *testing.T) {
 	}
 }
 
-// ─── FetchManifest tests ────────────────────────────────────────────────
+// FetchManifest tests
 
 func TestFetchManifest(t *testing.T) {
 	manifest := Manifest{
@@ -209,7 +209,7 @@ func TestFetchManifestFallback(t *testing.T) {
 	}
 }
 
-// ─── Check tests ────────────────────────────────────────────────────────
+// Check tests
 
 func TestCheckUpdateAvailable(t *testing.T) {
 	platformKey := PlatformKey()
@@ -278,7 +278,7 @@ func TestCheckOlderManifest(t *testing.T) {
 	}
 }
 
-// ─── Checksum verification tests ──────────────────────────────────────────
+// Checksum verification tests
 
 func TestChecksumVerification(t *testing.T) {
 	content := []byte("hello lynxdb binary content")
@@ -312,7 +312,7 @@ func TestChecksumVerification(t *testing.T) {
 	}
 }
 
-// ─── Extract tests ────────────────────────────────────────────────────────
+// Extract tests
 
 func TestExtractTarGz(t *testing.T) {
 	dir := t.TempDir()
@@ -423,7 +423,7 @@ func TestExtractArchiveDispatch(t *testing.T) {
 	}
 }
 
-// ─── Atomic swap tests ───────────────────────────────────────────────────
+// Atomic swap tests
 
 func TestAtomicSwap(t *testing.T) {
 	dir := t.TempDir()
@@ -476,7 +476,7 @@ func TestAtomicSwap(t *testing.T) {
 	}
 }
 
-// ─── Download tests ────────────────────────────────────────────────────
+// Download tests
 
 func TestDownloadWithProgress(t *testing.T) {
 	content := []byte("this is the archive content for download testing")
@@ -545,7 +545,7 @@ func TestDownloadChecksumMismatch(t *testing.T) {
 	}
 }
 
-// ─── helpers ─────────────────────────────────────────────────────────────
+// helpers
 
 func createTarGz(t *testing.T, archivePath, entryName string, content []byte) {
 	t.Helper()

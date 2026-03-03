@@ -220,7 +220,7 @@ func BatchFromEvents(events []*event.Event) *Batch {
 		}
 		b.Columns["host"] = col
 	}
-	// Note: Event.Index (logical namespace like "main") is intentionally NOT
+	// Event.Index (logical namespace like "main") is intentionally NOT
 	// exposed as a batch column. The "index" column is a Splunk-compatible
 	// alias for _source. The physical index name is available via query hints.
 

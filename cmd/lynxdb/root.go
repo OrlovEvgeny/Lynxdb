@@ -181,7 +181,7 @@ func Execute() {
 // (e.g. unknown flags, flag-parse errors).
 func ensureThemeInit() {
 	if ui.Stderr == nil {
-		ui.Init(globalNoColor)
+		ui.Init(globalNoColor || os.Getenv("NO_COLOR") != "")
 	}
 }
 

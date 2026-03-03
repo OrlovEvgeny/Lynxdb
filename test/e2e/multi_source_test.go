@@ -45,7 +45,7 @@ func setupMultiSource(t *testing.T) *Harness {
 	return h
 }
 
-// ─── index= queries ─────────────────────────────────────────────────────────
+// index= queries
 
 func TestE2E_MultiSource_IndexEquals_ReturnsOnlyMatchingSource(t *testing.T) {
 	h := setupMultiSource(t)
@@ -68,7 +68,7 @@ func TestE2E_MultiSource_IndexStar_ReturnsAll(t *testing.T) {
 	requireAggValue(t, r, "count", 18)
 }
 
-// ─── index IN (...) queries ──────────────────────────────────────────────────
+// index IN (...) queries
 
 func TestE2E_MultiSource_IndexIN_ReturnsSubset(t *testing.T) {
 	h := setupMultiSource(t)
@@ -84,7 +84,7 @@ func TestE2E_MultiSource_IndexIN_SingleValue(t *testing.T) {
 	requireAggValue(t, r, "count", 3)
 }
 
-// ─── index!= queries ────────────────────────────────────────────────────────
+// index!= queries
 
 func TestE2E_MultiSource_IndexNotEquals_ExcludesSource(t *testing.T) {
 	h := setupMultiSource(t)
@@ -97,7 +97,7 @@ func TestE2E_MultiSource_IndexNotEquals_ExcludesSource(t *testing.T) {
 	}
 }
 
-// ─── FROM queries ────────────────────────────────────────────────────────────
+// FROM queries
 
 func TestE2E_MultiSource_FROM_MultipleIndexes(t *testing.T) {
 	h := setupMultiSource(t)
@@ -120,7 +120,7 @@ func TestE2E_MultiSource_FROM_SingleIndex(t *testing.T) {
 	requireAggValue(t, r, "count", 3)
 }
 
-// ─── stats count by index ────────────────────────────────────────────────────
+// stats count by index
 
 func TestE2E_MultiSource_StatsCountByIndex(t *testing.T) {
 	h := setupMultiSource(t)
@@ -149,7 +149,7 @@ func TestE2E_MultiSource_StatsCountByIndex(t *testing.T) {
 	}
 }
 
-// ─── FROM with search filter ─────────────────────────────────────────────────
+// FROM with search filter
 
 func TestE2E_MultiSource_FROM_ScopeIsolation(t *testing.T) {
 	h := setupMultiSource(t)
@@ -172,7 +172,7 @@ func TestE2E_MultiSource_FROM_ScopeIsolation(t *testing.T) {
 	}
 }
 
-// ─── source= queries (alias for index=) ─────────────────────────────────────
+// source= queries (alias for index=)
 
 func TestE2E_MultiSource_SourceEquals(t *testing.T) {
 	h := setupMultiSource(t)
@@ -181,7 +181,7 @@ func TestE2E_MultiSource_SourceEquals(t *testing.T) {
 	requireAggValue(t, r, "count", 10)
 }
 
-// ─── Explain endpoint reports source scope ───────────────────────────────────
+// Explain endpoint reports source scope
 
 func TestE2E_MultiSource_Explain_ReportsScope(t *testing.T) {
 	h := setupMultiSource(t)
@@ -199,7 +199,7 @@ func TestE2E_MultiSource_Explain_ReportsScope(t *testing.T) {
 	}
 }
 
-// ─── Nonexistent source returns warning ──────────────────────────────────────
+// Nonexistent source returns warning
 
 func TestE2E_MultiSource_NonexistentSource_ReturnsResults(t *testing.T) {
 	h := setupMultiSource(t)
@@ -212,7 +212,7 @@ func TestE2E_MultiSource_NonexistentSource_ReturnsResults(t *testing.T) {
 	}
 }
 
-// ─── Glob pattern queries (MISSING-11) ──────────────────────────────────────
+// Glob pattern queries (MISSING-11)
 
 // ingestGlobEvents ingests events where Index and Source are DIFFERENT values.
 // This prevents the old bug where index was aliased to Source from passing.

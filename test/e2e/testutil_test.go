@@ -20,7 +20,7 @@ import (
 	"github.com/OrlovEvgeny/Lynxdb/pkg/config"
 )
 
-// ─── Harness ────────────────────────────────────────────────────────────────
+// Harness
 
 // Harness manages a test server and typed client for E2E tests.
 type Harness struct {
@@ -170,7 +170,7 @@ func (h *Harness) BaseURL() string {
 	return fmt.Sprintf("http://%s", h.srv.Addr())
 }
 
-// ─── Data helpers ───────────────────────────────────────────────────────────
+// Data helpers
 
 func projectRoot() string {
 	_, filename, _, _ := runtime.Caller(0)
@@ -217,7 +217,7 @@ func (h *Harness) IngestFile(index, relPath string) {
 	h.t.Logf("ingested %s into %s: accepted=%d", relPath, index, env.Data.Accepted)
 }
 
-// ─── Query helpers ──────────────────────────────────────────────────────────
+// Query helpers
 
 // MustQuery executes a synchronous query (Wait=nil) and returns the result.
 // Uses the sync path which waits server-side for job completion and returns
@@ -244,7 +244,7 @@ func (h *Harness) MustQuery(q string) *client.QueryResult {
 	return result
 }
 
-// ─── Result helpers ─────────────────────────────────────────────────────────
+// Result helpers
 
 // EventCount returns the number of result rows regardless of result type.
 func EventCount(r *client.QueryResult) int {
@@ -362,7 +362,7 @@ func toFloat(v interface{}) float64 {
 	}
 }
 
-// ─── Assertion helpers ──────────────────────────────────────────────────────
+// Assertion helpers
 
 // requireEventCount fatals if the result doesn't have the expected row count.
 func requireEventCount(t *testing.T, r *client.QueryResult, expected int) {
@@ -405,6 +405,6 @@ func assertQueryResultsEqual(t *testing.T, name string, pre, post *client.QueryR
 	}
 }
 
-// ─── Unused import guard ────────────────────────────────────────────────────
+// Unused import guard
 
 var _ = http.StatusOK

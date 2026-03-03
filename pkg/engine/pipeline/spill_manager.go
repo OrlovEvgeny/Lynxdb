@@ -210,8 +210,8 @@ func (m *SpillManager) Dir() string {
 }
 
 // CleanupOrphans walks the given directory and removes any files matching the
-// "lynxdb-spill-" prefix. These are orphans from previous crashes. This function
-// is intended to be called once during server startup.
+// "lynxdb-spill-" prefix. These are orphans from previous crashes. Intended
+// to be called once during server startup.
 //
 // Returns the number of orphan files removed.
 func CleanupOrphans(dir string, logger *slog.Logger) int {

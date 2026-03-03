@@ -60,7 +60,6 @@ func runUpgrade(check bool, version string, force, yes bool) error {
 		return nil
 	}
 
-	// Step 1: Fetch manifest and check for updates.
 	printMeta("Checking for updates...")
 
 	var result *upgrade.CheckResult
@@ -103,13 +102,11 @@ func runUpgrade(check bool, version string, force, yes bool) error {
 		}
 	}
 
-	// Step 2: No update available.
 	if !result.UpdateAvail && !force {
 		printSuccess("Already up to date (%s)", buildinfo.Version)
 		return nil
 	}
 
-	// Step 3: Check-only mode.
 	if check {
 		if result.UpdateAvail {
 			printSuccess("Update available: %s -> %s", result.CurrentVersion, result.LatestVersion)
@@ -126,12 +123,10 @@ func runUpgrade(check bool, version string, force, yes bool) error {
 		return nil
 	}
 
-	// Step 4: Display notices.
 	for _, notice := range result.Notices {
 		printWarning("%s", notice)
 	}
 
-	// Step 5: Confirm.
 	targetVersion := result.LatestVersion
 	if version != "" {
 		targetVersion = version
@@ -145,7 +140,6 @@ func runUpgrade(check bool, version string, force, yes bool) error {
 		}
 	}
 
-	// Step 6: Download with progress.
 	if result.Artifact == nil {
 		return fmt.Errorf("no artifact available for %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
@@ -174,10 +168,8 @@ func runUpgrade(check bool, version string, force, yes bool) error {
 	}
 	defer os.Remove(archivePath)
 
-	// Step 7: Verify (already done in Download, but confirm to user).
 	printSuccess("Checksum verified")
 
-	// Step 8: Install.
 	if err := upgrade.Install(archivePath); err != nil {
 		if os.IsPermission(err) {
 			return fmt.Errorf("permission denied. Try: sudo lynxdb upgrade")

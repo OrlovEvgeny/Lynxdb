@@ -159,7 +159,6 @@ func ruleHighMemory(s *QueryStats) *Recommendation {
 	return nil
 }
 
-// 10. Large dataset in pipe mode.
 func ruleLargePipeMode(s *QueryStats) *Recommendation {
 	if s.Ephemeral && s.ScannedRows > 1_000_000 {
 		return &Recommendation{
@@ -173,7 +172,6 @@ func ruleLargePipeMode(s *QueryStats) *Recommendation {
 	return nil
 }
 
-// 11. Stats without partial aggregation.
 func ruleNoPartialAgg(s *QueryStats) *Recommendation {
 	if hasStatsStage(s) && !s.PartialAggUsed && !s.Ephemeral && s.TotalSegments > 3 {
 		return &Recommendation{
@@ -186,7 +184,6 @@ func ruleNoPartialAgg(s *QueryStats) *Recommendation {
 	return nil
 }
 
-// 12. Bloom active but inverted index not used.
 func ruleBloomWithoutInverted(s *QueryStats) *Recommendation {
 	if s.InvertedIndexHits == 0 && s.BloomSkippedSegments > 0 && !s.Ephemeral {
 		return &Recommendation{
@@ -199,7 +196,6 @@ func ruleBloomWithoutInverted(s *QueryStats) *Recommendation {
 	return nil
 }
 
-// 13. Hot segment detected — one segment took >50% of total scan time (trace only).
 func ruleHotSegment(s *QueryStats) *Recommendation {
 	if len(s.SegmentDetails) < 2 || s.ScanDuration <= 0 {
 		return nil

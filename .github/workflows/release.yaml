@@ -9,7 +9,6 @@
 #   3. Sync artifacts to CDN (Cloudflare R2)
 #   4. Update manifest.json on CDN
 #   5. Update Homebrew tap
-#   6. Build & push Docker images
 
 name: Release
 
@@ -163,18 +162,3 @@ jobs:
           # Verify install.sh is accessible
           curl -fsSL "https://dl.lynxdb.org/install.sh" | head -5
           echo "CDN verification passed"
-
-  # ── Update install.sh on lynxdb.org ─────────────────────────────────────
-  update-website:
-    name: Update Website
-    needs: [goreleaser, cdn-sync]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger website deploy
-        run: |
-          # If lynxdb.org is on Cloudflare Pages / Vercel / Netlify,
-          # trigger a redeploy or update the install.sh redirect
-          curl -fsSL -X POST \
-            -H "Authorization: Bearer ${{ secrets.CF_PAGES_TOKEN }}" \
-            "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/pages/projects/lynxdb-org/deployments" \
-            || echo "Website deploy trigger skipped (optional)"

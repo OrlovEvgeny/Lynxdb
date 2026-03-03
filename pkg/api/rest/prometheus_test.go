@@ -93,7 +93,7 @@ func TestPrometheusMetrics_Handler(t *testing.T) {
 	bodyStr := string(body)
 
 	// Verify key metric names appear in the exposition format.
-	// Note: lynxdb_query_errors_total is a CounterVec — Prometheus does not
+	// lynxdb_query_errors_total is a CounterVec — Prometheus does not
 	// emit it until at least one label combination has been observed.
 	for _, name := range []string{
 		"lynxdb_query_duration_seconds",

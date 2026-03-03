@@ -63,7 +63,6 @@ func DetectInstallMode() (Mode, Paths) {
 func UninstallSteps(opts UninstallOptions, paths Paths) []Step {
 	var steps []Step
 
-	// 1. Stop service
 	steps = append(steps, Step{
 		Name: "Stop service",
 		Fn: func() (string, error) {
@@ -71,7 +70,6 @@ func UninstallSteps(opts UninstallOptions, paths Paths) []Step {
 		},
 	})
 
-	// 2. Remove service file
 	steps = append(steps, Step{
 		Name: "Remove service",
 		Fn: func() (string, error) {
@@ -79,7 +77,6 @@ func UninstallSteps(opts UninstallOptions, paths Paths) []Step {
 		},
 	})
 
-	// 3. Remove binary
 	steps = append(steps, Step{
 		Name: "Remove binary",
 		Fn: func() (string, error) {
@@ -87,7 +84,6 @@ func UninstallSteps(opts UninstallOptions, paths Paths) []Step {
 		},
 	})
 
-	// 4. Purge-only steps
 	if opts.Purge {
 		steps = append(steps, Step{
 			Name: "Remove config",

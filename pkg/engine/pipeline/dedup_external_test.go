@@ -59,7 +59,7 @@ func TestDedupSpillTransition(t *testing.T) {
 	}
 
 	// Verify spill actually occurred.
-	// Note: CollectAll calls Close(), which clears externalSet. We check
+	// CollectAll calls Close(), which clears externalSet, so we check
 	// the persisted spill metrics instead.
 	di := findDedupIterator(iter)
 	if di == nil {

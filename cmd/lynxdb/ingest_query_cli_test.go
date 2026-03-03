@@ -10,7 +10,7 @@ func setupServerWithData(t *testing.T) string {
 	t.Helper()
 
 	baseURL := newTestServer(t)
-	ingestTestData(t, baseURL, "main", "testdata/access.log")
+	ingestTestData(t, baseURL, "main", "testdata/logs/access.log")
 
 	return baseURL
 }

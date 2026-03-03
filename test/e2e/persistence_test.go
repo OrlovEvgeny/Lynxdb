@@ -36,7 +36,7 @@ func TestE2E_Persistence_DataSurvivesRestart(t *testing.T) {
 		{"OpenStack_StatusCounts", `FROM idx_openstack | REX "status: (?<status>\d+)" | WHERE isnotnull(status) | STATS count BY status | SORT status`},
 		{"SSH_HourlyBuckets", `FROM idx_ssh | BIN _time span=1h AS hour | STATS count BY hour | SORT hour`},
 		{"SSH_FailedCount", `FROM idx_ssh | EVAL has_failed = IF(match(_raw, "Failed password"), 1, 0) | STATS sum(has_failed) AS failed_count`},
-		// Note: count AS attempts in compound STATS (with BY) uses single-agg path where alias is broken.
+		// count AS attempts in compound STATS (with BY) uses single-agg path where alias is broken.
 		// We use count BY user directly.
 		{"SSH_TopAttackers", `FROM idx_ssh | REX "Failed password for (?:invalid user )?(?<user>\w+) from (?<ip>\d+\.\d+\.\d+\.\d+)" | WHERE isnotnull(user) | STATS count BY user | SORT - count | HEAD 3`},
 		{"SSH_UniqueIPs", `FROM idx_ssh | REX "(?<ip>\d+\.\d+\.\d+\.\d+)" | WHERE isnotnull(ip) | DEDUP ip | STATS count`},

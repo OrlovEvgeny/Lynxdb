@@ -278,7 +278,7 @@ func TestSourceScope_MatchesSource(t *testing.T) {
 	}
 }
 
-// ─── BUG-8: SearchOrExpr source scope extraction ────────────────────────────
+// BUG-8: SearchOrExpr source scope extraction
 
 func TestExtractSourceScope_SearchOrExpr(t *testing.T) {
 	// search index=nginx OR index=postgres
@@ -353,7 +353,7 @@ func TestExtractSourceScope_SearchOrExprMixed(t *testing.T) {
 	}
 }
 
-// ─── BUG-9: SourceScope lazy set for large lists ─────────────────────────────
+// BUG-9: SourceScope lazy set for large lists
 
 func TestSourceScope_LargeList_MatchesSource(t *testing.T) {
 	// Create a scope with >16 sources to trigger set optimization.

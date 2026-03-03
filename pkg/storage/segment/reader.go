@@ -1152,9 +1152,7 @@ func (r *Reader) findColumnInAllRowGroups(name string) *ColumnChunkMeta {
 	return findChunk(&r.footer.RowGroups[0], name)
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Per-column bloom filter access
-// ──────────────────────────────────────────────────────────────────────────────
+// Per-column bloom filter access.
 
 // loadPerColumnBlooms parses the per-column bloom section for a row group
 // and caches the result. Returns the cached map on subsequent calls.
@@ -1353,9 +1351,7 @@ func (r *Reader) BloomFilter() (*index.BloomFilter, error) {
 	return merged, nil
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Primary index, inverted index, sort key support
-// ──────────────────────────────────────────────────────────────────────────────
+// Primary index, inverted index, sort key support.
 
 // PrimaryIndex returns the sparse primary index, or nil if no index is present.
 func (r *Reader) PrimaryIndex() (*PrimaryIndex, error) {
@@ -1450,10 +1446,6 @@ func (r *Reader) InvertedIndex() (*index.SerializedIndex, error) {
 
 	return index.DecodeInvertedIndex(r.data[start:end])
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Predicate evaluation helpers
-// ──────────────────────────────────────────────────────────────────────────────
 
 func evalStringPredicate(val, op, target string) bool {
 	switch op {

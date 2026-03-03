@@ -355,7 +355,7 @@ func TestPrimaryIndex_LargeDataset(t *testing.T) {
 			}
 		}
 	}
-	// Just use sort.Slice for the actual test.
+	// Use sort.Slice for the actual test.
 	events = generateTestEvents(20000)
 	hostEvents := make([]*event.Event, len(events))
 	copy(hostEvents, events)

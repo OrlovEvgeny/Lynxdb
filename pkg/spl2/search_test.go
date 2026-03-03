@@ -793,7 +793,7 @@ func TestExtractStarLiteral(t *testing.T) {
 	}
 }
 
-// ─── BUG-4: source alias in search evaluator ─────────────────────────────────
+// BUG-4: source alias in search evaluator
 
 func TestSearchEval_SourceAliasInCompare(t *testing.T) {
 	// Pipeline rows store "source" under "_source" (physical column name).

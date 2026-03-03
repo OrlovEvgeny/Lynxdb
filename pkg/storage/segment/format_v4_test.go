@@ -1270,9 +1270,7 @@ func TestLazyFieldsAllocation(t *testing.T) {
 	}
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// V4 feature tests: ConstColumns, per-column bloom, presence bitmap
-// ──────────────────────────────────────────────────────────────────────────────
+// V4 feature tests: ConstColumns, per-column bloom, presence bitmap.
 
 func TestV4_ConstColumn_Roundtrip(t *testing.T) {
 	// generateTestEvents creates uniform _source, _sourcetype, index → const columns.

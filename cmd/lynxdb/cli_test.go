@@ -405,7 +405,7 @@ func TestCLIInfra_RunCmd_CapturesStdout(t *testing.T) {
 }
 
 func TestCLIInfra_TestdataPath_Resolves(t *testing.T) {
-	path := testdataPath("access.log")
+	path := testdataPath("logs/access.log")
 	if _, err := os.Stat(path); err != nil {
 		t.Errorf("testdataPath should resolve to existing file, got error: %v", err)
 	}
@@ -456,6 +456,6 @@ func TestCLIInfra_NewTestServer_StartsAndStops(t *testing.T) {
 
 func TestCLIInfra_IngestTestData_AcceptsEvents(t *testing.T) {
 	baseURL := newTestServer(t)
-	ingestTestData(t, baseURL, "main", "testdata/access.log")
+	ingestTestData(t, baseURL, "main", "testdata/logs/access.log")
 	// If we get here without t.Fatal, ingest succeeded.
 }

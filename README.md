@@ -48,7 +48,6 @@ lynxdb query 'source=nginx status>=500 | stats count, avg(duration_ms) by uri | 
 ### Install
 
 ```bash
-# Pre-built binary (Linux, macOS, Windows)
 curl -fsSL https://lynxdb.org/install.sh | sh
 ```
 

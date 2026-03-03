@@ -206,7 +206,7 @@ func TestCanPruneRowGroupByIndex(t *testing.T) {
 	beforeEnd := base.Add(-1 * time.Hour)
 	if !r.CanPruneRowGroupByIndex(0, &beforeStart, &beforeEnd) {
 		// This might not prune if the zone map doesn't have enough granularity.
-		// Just verify no crash.
+		// Verify no crash.
 		t.Log("note: did not prune with time range before data (zone map granularity)")
 	}
 

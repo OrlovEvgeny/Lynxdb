@@ -17,9 +17,8 @@ func (c *Client) Status(ctx context.Context) (*ServerStatus, error) {
 }
 
 // Health returns the server health check result.
-// Note: /health is outside /api/v1, so we use doRaw.
-// The server wraps the response in a {"data": ...} envelope via respondData,
-// so we must unwrap it before decoding into HealthResult.
+// /health is outside /api/v1, so we use doRaw and unwrap the
+// {"data": ...} envelope before decoding into HealthResult.
 func (c *Client) Health(ctx context.Context) (*HealthResult, error) {
 	req, err := c.newRequest(ctx, http.MethodGet, c.baseURL+"/health", nil)
 	if err != nil {

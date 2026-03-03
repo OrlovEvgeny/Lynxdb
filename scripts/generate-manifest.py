@@ -28,7 +28,7 @@ from pathlib import Path
 # Archive format: lynxdb-v{version}-{os}-{arch}[-musl].tar.gz
 ARTIFACT_PATTERN = re.compile(
     r"lynxdb-v[\d.]+(?:-(?:rc|alpha|beta|dev)\.\d+)?-"
-    r"(?P<os>linux|darwin|freebsd|windows)-"
+    r"(?P<os>linux|darwin|windows)-"
     r"(?P<arch>amd64|arm64|armv7)"
     r"(?P<variant>-musl)?"
     r"\.(?P<ext>tar\.gz|zip)$"

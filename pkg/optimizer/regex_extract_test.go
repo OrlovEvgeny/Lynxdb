@@ -9,7 +9,7 @@ import (
 
 func TestRegexExtract_SimpleLiteral(t *testing.T) {
 	// "(?P<user>\w+)@example.com" → ["@example", "com"]
-	// Note: the "." in regex breaks the literal, so it splits
+	// The "." in regex breaks the literal, so it splits.
 	result := extractRegexLiterals(`(?P<user>\w+)@example.com`)
 	if len(result) == 0 {
 		t.Fatal("expected at least one literal")
@@ -27,7 +27,7 @@ func TestRegexExtract_SimpleLiteral(t *testing.T) {
 
 func TestRegexExtract_MultipleLiterals(t *testing.T) {
 	// "error: (?P<msg>.+) at line" → ["error: ", " at line"]
-	// Note: "." breaks the run, so "error: " becomes "error: " and " at line" becomes " at line"
+	// "." breaks the run, so "error: " and " at line" are extracted separately.
 	result := extractRegexLiterals(`error: (?P<msg>.+) at line`)
 	if len(result) < 2 {
 		t.Fatalf("expected at least 2 literals, got %v", result)

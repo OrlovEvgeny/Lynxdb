@@ -732,8 +732,7 @@ func TestOptimization_16_AdaptiveExecution(t *testing.T) {
 		}
 
 		// Close the file handle but keep the file for reading.
-		// We need to do this manually since Close() also removes the file.
-		// Instead, use the path before closing.
+		// Close() also removes the file, so grab the path first.
 		sw.Close() // This removes the file, so we need a different approach.
 
 		// Re-do: write, sync, read from same path before close removes it.

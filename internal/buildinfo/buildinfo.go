@@ -56,6 +56,7 @@ func FullVersion() string {
 // serialization. Keys: version, commit, date, go, os, arch.
 func Info() map[string]string {
 	return map[string]string{
+		"name":    "LynxDB",
 		"version": Version,
 		"commit":  Commit,
 		"date":    Date,

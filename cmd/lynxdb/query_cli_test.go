@@ -15,7 +15,7 @@ var testLevelError = "ERROR" //nolint:gochecknoglobals // test-only constant
 // File-mode query tests (no server needed)
 
 func TestQueryFile_StatsCount_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json", "| stats count")
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json", "| stats count")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
 	}
@@ -27,7 +27,7 @@ func TestQueryFile_StatsCount_JSON(t *testing.T) {
 }
 
 func TestQueryFile_StatsCountByLevel_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json", "| stats count by level")
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json", "| stats count by level")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestQueryFile_StatsCountByLevel_JSON(t *testing.T) {
 }
 
 func TestQueryFile_Filter_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| where level=\""+testLevelError+"\" | stats count")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -79,7 +79,7 @@ func TestQueryFile_Filter_JSON(t *testing.T) {
 }
 
 func TestQueryFile_Head_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json", "| head 5")
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json", "| head 5")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
 	}
@@ -94,7 +94,7 @@ func TestQueryFile_SortDescHead_JSON(t *testing.T) {
 	// Equivalent to "top 3 level" via stats + sort + head pipeline.
 	// The native `top` command uses a different code path in the ephemeral
 	// engine that doesn't extract kv fields, so we test the pipeline form.
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| stats count by level | sort -count | head 3")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -125,7 +125,7 @@ func TestQueryFile_SortDescHead_JSON(t *testing.T) {
 }
 
 func TestQueryFile_FieldsProjection_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| fields host, level | head 3")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -155,7 +155,7 @@ func TestQueryFile_FieldsProjection_JSON(t *testing.T) {
 }
 
 func TestQueryFile_Search_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| search \""+testLevelError+"\" | stats count")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -169,7 +169,7 @@ func TestQueryFile_Search_JSON(t *testing.T) {
 }
 
 func TestQueryFile_Sort_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| stats count by host | sort -count")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -191,7 +191,7 @@ func TestQueryFile_Sort_JSON(t *testing.T) {
 }
 
 func TestQueryFile_Eval_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		`| eval fast=if(response_time<100,"yes","no") | stats count by fast`)
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -218,7 +218,7 @@ func TestQueryFile_Eval_JSON(t *testing.T) {
 }
 
 func TestQueryFile_Dedup_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| dedup level")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -242,7 +242,7 @@ func TestQueryFile_Dedup_JSON(t *testing.T) {
 }
 
 func TestQueryFile_Rename_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| stats count by level | rename count AS total")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -265,7 +265,7 @@ func TestQueryFile_Rename_JSON(t *testing.T) {
 }
 
 func TestQueryFile_CSVFormat(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "csv",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "csv",
 		"| stats count by level")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -291,7 +291,7 @@ func TestQueryFile_CSVFormat(t *testing.T) {
 }
 
 func TestQueryFile_TableFormat(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "table",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "table",
 		"| stats count by level")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -321,7 +321,7 @@ func TestQueryFile_TableFormat(t *testing.T) {
 }
 
 func TestQueryFile_RawFormat(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "raw",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "raw",
 		"| head 3")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -334,7 +334,7 @@ func TestQueryFile_RawFormat(t *testing.T) {
 }
 
 func TestQueryFile_SingleValue_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| stats count")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -351,7 +351,7 @@ func TestQueryFile_SingleValue_JSON(t *testing.T) {
 }
 
 func TestQueryFile_EmptyResult_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		`| where level="NONEXISTENT" | stats count`)
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -364,7 +364,7 @@ func TestQueryFile_EmptyResult_JSON(t *testing.T) {
 }
 
 func TestQueryFile_QuietFlag(t *testing.T) {
-	_, stderr, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	_, stderr, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"--quiet", "| stats count")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -377,14 +377,14 @@ func TestQueryFile_QuietFlag(t *testing.T) {
 
 func TestQueryFile_ParseError(t *testing.T) {
 	// "| where" without a predicate is a genuine parse error.
-	_, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "| where")
+	_, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "| where")
 	if err == nil {
 		t.Fatal("expected error for incomplete WHERE clause, got nil")
 	}
 }
 
 func TestQueryFile_JSONValidNDJSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| head 10")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -411,7 +411,7 @@ func TestQueryFile_JSONValidNDJSON(t *testing.T) {
 
 func TestQueryFile_CSVQuoting(t *testing.T) {
 	// The "msg" field in access.log contains quoted strings that may need CSV escaping.
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "csv",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "csv",
 		"| fields msg | head 5")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -431,8 +431,8 @@ func TestQueryFile_CSVQuoting(t *testing.T) {
 }
 
 func TestQueryFile_GlobPattern(t *testing.T) {
-	// testdata/access.log should be matched by the glob.
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access*.log"), "--format", "json",
+	// testdata/logs/access.log should be matched by the glob.
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access*.log"), "--format", "json",
 		"| stats count")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -445,7 +445,7 @@ func TestQueryFile_GlobPattern(t *testing.T) {
 }
 
 func TestQueryFile_StatsCountByHost_SumsTo1000(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| stats count by host")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -465,7 +465,7 @@ func TestQueryFile_StatsCountByHost_SumsTo1000(t *testing.T) {
 }
 
 func TestQueryFile_Fillnull_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| head 3 | fillnull value=MISSING")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -479,13 +479,13 @@ func TestQueryFile_Fillnull_JSON(t *testing.T) {
 
 func TestQueryFile_MultipleFormats_ConsistentCounts(t *testing.T) {
 	// Run the same aggregation in JSON and CSV formats; both should show 3 rows.
-	stdoutJSON, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdoutJSON, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| stats count by level")
 	if err != nil {
 		t.Fatalf("JSON query failed: %v", err)
 	}
 
-	stdoutCSV, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "csv",
+	stdoutCSV, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "csv",
 		"| stats count by level")
 	if err != nil {
 		t.Fatalf("CSV query failed: %v", err)
@@ -504,7 +504,7 @@ func TestQueryFile_MultipleFormats_ConsistentCounts(t *testing.T) {
 }
 
 func TestQueryFile_Sort_Ascending_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| stats count by level | sort count")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -526,7 +526,7 @@ func TestQueryFile_Sort_Ascending_JSON(t *testing.T) {
 }
 
 func TestQueryFile_StatsMultipleAggs_JSON(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| stats count, avg(response_time) as avg_rt by level")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
@@ -549,7 +549,7 @@ func TestQueryFile_StatsMultipleAggs_JSON(t *testing.T) {
 }
 
 func TestQueryFile_LevelValues_Exhaustive(t *testing.T) {
-	stdout, _, err := runCmd(t, "query", "--file", testdataPath("access.log"), "--format", "json",
+	stdout, _, err := runCmd(t, "query", "--file", testdataPath("logs/access.log"), "--format", "json",
 		"| stats count by level | sort level")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)

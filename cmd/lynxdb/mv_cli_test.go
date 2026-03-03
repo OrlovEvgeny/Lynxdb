@@ -12,7 +12,7 @@ func setupDiskServerWithData(t *testing.T) string {
 	t.Helper()
 
 	baseURL := newTestServerWithDisk(t)
-	ingestTestData(t, baseURL, "main", "testdata/access.log")
+	ingestTestData(t, baseURL, "main", "testdata/logs/access.log")
 
 	return baseURL
 }

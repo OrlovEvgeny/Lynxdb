@@ -1029,7 +1029,6 @@ func SetValueInFile(path, key, value string) error {
 		field = key
 	}
 
-	// Ensure parent directory exists.
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("create config dir: %w", err)

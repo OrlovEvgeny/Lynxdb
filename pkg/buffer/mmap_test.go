@@ -53,7 +53,7 @@ func TestFreeOffHeap_Nil(t *testing.T) {
 }
 
 func TestMmapAvailable(t *testing.T) {
-	// Just verify it returns a bool without panicking.
+	// Verify it returns a bool without panicking.
 	_ = mmapAvailable()
 }
 

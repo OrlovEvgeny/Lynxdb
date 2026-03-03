@@ -8,14 +8,12 @@ import (
 )
 
 // ensureSystemUser creates the system user and group if they do not exist.
-// On Linux: uses groupadd/useradd. On FreeBSD: uses pw.
+// On Linux: uses groupadd/useradd.
 // Returns a detail string describing what happened.
 func ensureSystemUser(userName, groupName, homeDir string) (string, error) {
 	switch runtime.GOOS {
 	case "linux":
 		return ensureSystemUserLinux(userName, groupName, homeDir)
-	case "freebsd":
-		return ensureSystemUserFreeBSD(userName, groupName, homeDir)
 	default:
 		return "(skipped, unsupported OS)", nil
 	}
@@ -51,37 +49,6 @@ func ensureSystemUserLinux(userName, groupName, homeDir string) (string, error) 
 		cmd := exec.Command("useradd", args...) //nolint:gosec
 		if out, err := cmd.CombinedOutput(); err != nil {
 			return "", fmt.Errorf("install.ensureSystemUser: useradd: %s: %w", string(out), err)
-		}
-	}
-
-	return fmt.Sprintf("%s:%s", userName, groupName), nil
-}
-
-func ensureSystemUserFreeBSD(userName, groupName, homeDir string) (string, error) {
-	groupExists := userGroupExists(groupName)
-	userExists := userExists(userName)
-
-	if groupExists && userExists {
-		return fmt.Sprintf("%s:%s (already exists)", userName, groupName), nil
-	}
-
-	// Create group if needed.
-	if !groupExists {
-		cmd := exec.Command("pw", "groupadd", groupName) //nolint:gosec
-		if out, err := cmd.CombinedOutput(); err != nil {
-			return "", fmt.Errorf("install.ensureSystemUser: pw groupadd: %s: %w", string(out), err)
-		}
-	}
-
-	// Create user if needed.
-	if !userExists {
-		cmd := exec.Command("pw", "useradd", userName, //nolint:gosec
-			"-g", groupName,
-			"-s", "/usr/sbin/nologin",
-			"-d", homeDir,
-		)
-		if out, err := cmd.CombinedOutput(); err != nil {
-			return "", fmt.Errorf("install.ensureSystemUser: pw useradd: %s: %w", string(out), err)
 		}
 	}
 

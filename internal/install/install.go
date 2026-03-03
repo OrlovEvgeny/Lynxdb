@@ -95,7 +95,6 @@ type Result struct {
 }
 
 // ResolvePaths computes concrete filesystem paths from the given options.
-// This is a pure function (no I/O) and is fully unit-testable.
 func ResolvePaths(opts Options) Paths {
 	if opts.Mode == ModeSystem {
 		return resolveSystemPaths(opts)
@@ -190,7 +189,6 @@ func BuildSteps(opts Options) ([]Step, Paths) {
 
 	var steps []Step
 
-	// 1. Install binary
 	steps = append(steps, Step{
 		Name: "Binary",
 		Fn: func() (string, error) {
@@ -198,7 +196,6 @@ func BuildSteps(opts Options) ([]Step, Paths) {
 		},
 	})
 
-	// 2. Create system user (system mode, Linux/FreeBSD only)
 	if opts.Mode == ModeSystem && runtime.GOOS != "darwin" {
 		steps = append(steps, Step{
 			Name: "System user",
@@ -208,7 +205,6 @@ func BuildSteps(opts Options) ([]Step, Paths) {
 		})
 	}
 
-	// 3. Create directories
 	steps = append(steps, Step{
 		Name: "Directories",
 		Fn: func() (string, error) {
@@ -216,7 +212,6 @@ func BuildSteps(opts Options) ([]Step, Paths) {
 		},
 	})
 
-	// 4. Write config file
 	if !opts.SkipConfig {
 		steps = append(steps, Step{
 			Name: "Config",
@@ -226,7 +221,6 @@ func BuildSteps(opts Options) ([]Step, Paths) {
 		})
 	}
 
-	// 5. Configure ulimits (system mode, Linux only)
 	if opts.Mode == ModeSystem && !opts.SkipUlimits {
 		steps = append(steps, Step{
 			Name: "File limits",
@@ -236,7 +230,6 @@ func BuildSteps(opts Options) ([]Step, Paths) {
 		})
 	}
 
-	// 6. Set capabilities (system mode, Linux only)
 	if opts.Mode == ModeSystem && !opts.SkipCapabilities {
 		steps = append(steps, Step{
 			Name: "Capabilities",
@@ -246,7 +239,6 @@ func BuildSteps(opts Options) ([]Step, Paths) {
 		})
 	}
 
-	// 7. Install service
 	if !opts.SkipService {
 		steps = append(steps, Step{
 			Name: "Service",
@@ -256,7 +248,6 @@ func BuildSteps(opts Options) ([]Step, Paths) {
 		})
 	}
 
-	// 8. Self-test
 	if !opts.SkipSelfTest {
 		steps = append(steps, Step{
 			Name: "Self-test",
@@ -283,12 +274,10 @@ func installBinary(target string) (string, error) {
 		return "", fmt.Errorf("install.installBinary: resolve symlinks: %w", err)
 	}
 
-	// Check if target already exists and is identical.
 	if sameFile(src, target) {
 		return fmt.Sprintf("%s (already installed)", target), nil
 	}
 
-	// Ensure target directory exists.
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		return "", fmt.Errorf("install.installBinary: create directory: %w", err)
 	}
@@ -383,12 +372,10 @@ func copyFile(src, dst string) error {
 // writeConfigFile creates a production-ready config file if it does not
 // already exist. Returns the path and a detail string.
 func writeConfigFile(opts Options, paths Paths) (string, error) {
-	// Don't overwrite existing config.
 	if _, err := os.Stat(paths.ConfigFile); err == nil {
 		return fmt.Sprintf("%s (already exists)", paths.ConfigFile), nil
 	}
 
-	// Ensure config directory exists.
 	if err := os.MkdirAll(paths.ConfigDir, 0o755); err != nil {
 		return "", fmt.Errorf("install.writeConfigFile: create config dir: %w", err)
 	}

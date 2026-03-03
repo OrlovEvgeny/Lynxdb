@@ -173,7 +173,6 @@ lynxdb completion fish > ~/.config/fish/completions/lynxdb.fish
 | Linux | ARMv7 | Raspberry Pi 3+ |
 | macOS | Intel (amd64) | macOS 12+ |
 | macOS | Apple Silicon (arm64) | M1/M2/M3/M4 |
-| FreeBSD | x86_64 | |
 | Windows | x86_64 | Best with WSL2 |
 
 All binaries are statically linked (`CGO_ENABLED=0`) with zero runtime dependencies.

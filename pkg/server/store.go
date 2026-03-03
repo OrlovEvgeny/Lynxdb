@@ -362,6 +362,16 @@ func (e *Engine) buildSegmentSources(
 func (e *Engine) buildEventStore(ctx context.Context, hints *spl2.QueryHints, onProgress func(*SearchProgress), monitor *stats.BudgetMonitor, traceSegments ...bool) (map[string][]*event.Event, storeStats, error) {
 	trace := len(traceSegments) > 0 && traceSegments[0]
 	_ = trace
+
+	// Flush buffered events so they are visible to the query scan.
+	// BufferedEvents() is a single lock+counter check — negligible overhead.
+	// Flush() only runs when there are actual buffered events.
+	if e.batcher != nil && e.batcher.BufferedEvents() > 0 {
+		if err := e.batcher.Flush(); err != nil {
+			e.logger.Warn("pre-query batcher flush failed", "error", err)
+		}
+	}
+
 	// Pin the current epoch to prevent retired segments from being munmap'd
 	// while workers read from them. Unpin after all workers finish.
 	ep := e.pinEpoch()
@@ -1065,6 +1075,13 @@ func (e *Engine) buildPartialAggStore(
 	spec *enginepipeline.PartialAggSpec,
 	onProgress func(*SearchProgress),
 ) ([][]*enginepipeline.PartialAggGroup, storeStats) {
+	// Flush buffered events so they are visible to the query scan.
+	if e.batcher != nil && e.batcher.BufferedEvents() > 0 {
+		if err := e.batcher.Flush(); err != nil {
+			e.logger.Warn("pre-query batcher flush failed", "error", err)
+		}
+	}
+
 	// Pin epoch to prevent retired segments from being munmap'd during scan.
 	ep := e.pinEpoch()
 	segs := make([]*segmentHandle, len(ep.segments))
@@ -1230,6 +1247,13 @@ func (e *Engine) buildTransformPartialAggStore(
 	tSpec *optimizer.TransformPartialAggAnnotation,
 	onProgress func(*SearchProgress),
 ) ([][]*enginepipeline.PartialAggGroup, storeStats) {
+	// Flush buffered events so they are visible to the query scan.
+	if e.batcher != nil && e.batcher.BufferedEvents() > 0 {
+		if err := e.batcher.Flush(); err != nil {
+			e.logger.Warn("pre-query batcher flush failed", "error", err)
+		}
+	}
+
 	// Pin epoch to prevent retired segments from being munmap'd during scan.
 	ep := e.pinEpoch()
 	segs := make([]*segmentHandle, len(ep.segments))
@@ -1604,6 +1628,13 @@ func readSegmentColumnar(
 func (e *Engine) buildColumnarStore(ctx context.Context, hints *spl2.QueryHints, onProgress func(*SearchProgress), monitor *stats.BudgetMonitor, traceSegments ...bool) (map[string][]*enginepipeline.Batch, storeStats, error) {
 	trace := len(traceSegments) > 0 && traceSegments[0]
 	_ = trace
+
+	// Flush buffered events so they are visible to the query scan.
+	if e.batcher != nil && e.batcher.BufferedEvents() > 0 {
+		if err := e.batcher.Flush(); err != nil {
+			e.logger.Warn("pre-query batcher flush failed", "error", err)
+		}
+	}
 
 	// Pin epoch to prevent retired segments from being munmap'd during scan.
 	ep := e.pinEpoch()

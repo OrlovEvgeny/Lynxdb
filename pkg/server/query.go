@@ -880,6 +880,13 @@ func (e *Engine) runStreamingPipeline(
 	// Warn when a single source doesn't exist in the registry, with fuzzy matching.
 	qr.warnings = append(qr.warnings, e.checkSourceWarnings(hints)...)
 
+	// Flush buffered events so they are visible to the query scan.
+	if e.batcher != nil && e.batcher.BufferedEvents() > 0 {
+		if err := e.batcher.Flush(); err != nil {
+			e.logger.Warn("pre-query batcher flush failed", "error", err)
+		}
+	}
+
 	// Pin the current epoch to prevent retired segments from being munmap'd
 	// while the streaming pipeline reads from them. The pipeline reads
 	// lazily during CollectAll; unpin after all reads complete.
@@ -1051,12 +1058,17 @@ func (e *Engine) buildProgramPipeline(
 // countStarFromMetadata counts events using segment metadata and buffered event count,
 // avoiding reading any column data. Used when the optimizer detects countStarOnly.
 func (e *Engine) countStarFromMetadata(hints *spl2.QueryHints) int64 {
+	// Flush buffered events so they are visible to the metadata count.
+	if e.batcher != nil && e.batcher.BufferedEvents() > 0 {
+		if err := e.batcher.Flush(); err != nil {
+			e.logger.Warn("pre-query batcher flush failed", "error", err)
+		}
+	}
+
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
 	var total int64
-
-	// No separate buffer to scan — all data is in segments.
 
 	// Sum segment event counts from metadata.
 	var ss storeStats

@@ -263,7 +263,7 @@ func checkCompletion() checkResult {
 
 func checkCompletionFile(shell, installCmd string) checkResult {
 	// Check if lynxdb appears in the shell's completion system.
-	// This is a heuristic — we check if the command exists in the path.
+	// Heuristic — check if the command exists in PATH.
 	_, err := exec.LookPath("lynxdb")
 	if err != nil {
 		return checkResult{

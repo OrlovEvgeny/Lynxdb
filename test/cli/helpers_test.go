@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-// ─── Result type ─────────────────────────────────────────────────────────────
+// Result type
 
 // Result holds the captured output and exit code from a CLI invocation.
 type Result struct {
@@ -27,7 +27,7 @@ type Result struct {
 	ExitCode int
 }
 
-// ─── Core runner functions ───────────────────────────────────────────────────
+// Core runner functions
 
 // runLynxDB executes the lynxdb binary with the given args and returns the result.
 func runLynxDB(t *testing.T, args ...string) Result {
@@ -114,7 +114,7 @@ func buildResult(t *testing.T, stdout, stderr string, err error) Result {
 	return Result{} // unreachable
 }
 
-// ─── Server management ───────────────────────────────────────────────────────
+// Server management
 
 // Server represents a running lynxdb server process for testing.
 type Server struct {
@@ -270,7 +270,7 @@ func ingestFileWithIndex(t *testing.T, srv *Server, filePath, index string) {
 	}
 }
 
-// ─── Assertion helpers ───────────────────────────────────────────────────────
+// Assertion helpers
 
 // mustParseJSON parses NDJSON lines into a slice of maps. Fatals on error.
 func mustParseJSON(t *testing.T, s string) []map[string]interface{} {
@@ -346,7 +346,7 @@ func mapKeys(m map[string]interface{}) []string {
 	return keys
 }
 
-// ─── Infra sanity tests ──────────────────────────────────────────────────────
+// Infra sanity tests
 
 func TestInfra_BinaryExists(t *testing.T) {
 	info, err := os.Stat(lynxdbBin)

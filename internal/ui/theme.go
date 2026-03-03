@@ -63,8 +63,15 @@ func InitEnv(noColor bool) {
 	}
 
 	// Build backward-compatible Theme instances.
-	Stdout = newThemeFromEnv(os.Stdout)
-	Stderr = newThemeFromEnv(os.Stderr)
+	// When the profile is Ascii (NO_COLOR, TERM=dumb, --no-color), use the
+	// no-color theme to guarantee zero ANSI escape sequences in output.
+	if profile == colorprofile.Ascii {
+		Stdout = newNoColorTheme(os.Stdout)
+		Stderr = newNoColorTheme(os.Stderr)
+	} else {
+		Stdout = newThemeFromEnv(os.Stdout)
+		Stderr = newThemeFromEnv(os.Stderr)
+	}
 }
 
 // Init is the legacy entry point. It delegates to InitEnv.

@@ -45,7 +45,7 @@ func createDirectories(opts Options, paths Paths) (string, error) {
 			return "", fmt.Errorf("install.createDirectories: chmod %s: %w", d.path, err)
 		}
 
-		// Set ownership on system installs (Linux/FreeBSD).
+		// Set ownership on system installs (Linux).
 		if d.owner != "" && opts.Mode == ModeSystem && runtime.GOOS != "windows" && runtime.GOOS != "darwin" {
 			parts := strings.SplitN(d.owner, ":", 2)
 			if len(parts) == 2 {

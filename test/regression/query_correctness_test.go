@@ -12,7 +12,7 @@ import (
 func TestRegression_SSH(t *testing.T) {
 	eng := sshEngine(t)
 
-	// ─── Ingestion ───────────────────────────────────────────────────────
+	// Ingestion
 	t.Run("Ingestion", func(t *testing.T) {
 		t.Run("TotalCount_2000", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | STATS count`)
@@ -28,7 +28,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── Search Keywords ─────────────────────────────────────────────────
+	// Search Keywords
 	t.Run("Search", func(t *testing.T) {
 		t.Run("FailedPassword_520", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | search "Failed password" | STATS count`)
@@ -64,7 +64,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── WHERE ───────────────────────────────────────────────────────────
+	// WHERE
 	t.Run("WHERE", func(t *testing.T) {
 		t.Run("IsNotNull_TargetUser_520", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | REX "Failed password for (?<target_user>\w+)" | WHERE isnotnull(target_user) | STATS count`)
@@ -91,7 +91,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── REX ─────────────────────────────────────────────────────────────
+	// REX
 	t.Run("REX", func(t *testing.T) {
 		t.Run("UniqueIPs_30", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | REX "(?<ip_addr>\d+\.\d+\.\d+\.\d+)" | WHERE isnotnull(ip_addr) | STATS dc(ip_addr) AS unique_ips`)
@@ -129,7 +129,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── EVAL ────────────────────────────────────────────────────────────
+	// EVAL
 	t.Run("EVAL", func(t *testing.T) {
 		t.Run("StringAssignment", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | EVAL source_type = "ssh_log" | HEAD 1 | TABLE source_type`)
@@ -209,7 +209,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── STATS ───────────────────────────────────────────────────────────
+	// STATS
 	t.Run("STATS", func(t *testing.T) {
 		t.Run("Count_2000", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | STATS count`)
@@ -261,7 +261,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── BIN ─────────────────────────────────────────────────────────────
+	// BIN
 	t.Run("BIN", func(t *testing.T) {
 		t.Run("Span1h_SumsTo2000", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | BIN _time span=1h AS hour_bucket | STATS count BY hour_bucket | SORT hour_bucket`)
@@ -282,7 +282,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── SORT ────────────────────────────────────────────────────────────
+	// SORT
 	t.Run("SORT", func(t *testing.T) {
 		t.Run("Ascending_Order", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | REX "(?<ip>\d+\.\d+\.\d+\.\d+)" | WHERE isnotnull(ip) | STATS count BY ip | SORT count | HEAD 3`)
@@ -330,7 +330,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── RENAME/TABLE ────────────────────────────────────────────────────
+	// RENAME/TABLE
 	t.Run("RenameTable", func(t *testing.T) {
 		t.Run("Rename_DC_30", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main
@@ -351,7 +351,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── DEDUP ───────────────────────────────────────────────────────────
+	// DEDUP
 	t.Run("DEDUP", func(t *testing.T) {
 		t.Run("UniqueIPs_30", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main
@@ -373,7 +373,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── EVENTSTATS ──────────────────────────────────────────────────────
+	// EVENTSTATS
 	t.Run("EVENTSTATS", func(t *testing.T) {
 		t.Run("WithBY_TopIP_867", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main
@@ -394,7 +394,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── STREAMSTATS ─────────────────────────────────────────────────────
+	// STREAMSTATS
 	t.Run("STREAMSTATS", func(t *testing.T) {
 		t.Run("RunningCount_10Rows", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | STREAMSTATS count AS row_num | WHERE row_num <= 10 | TABLE row_num`)
@@ -418,7 +418,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── TRANSACTION ─────────────────────────────────────────────────────
+	// TRANSACTION
 	t.Run("TRANSACTION", func(t *testing.T) {
 		t.Run("ByIP_30Transactions", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main
@@ -442,7 +442,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── Complex Pipelines ───────────────────────────────────────────────
+	// Complex Pipelines
 	t.Run("ComplexPipelines", func(t *testing.T) {
 		t.Run("BruteForceDetection_Has183", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main
@@ -507,7 +507,7 @@ func TestRegression_SSH(t *testing.T) {
 		})
 	})
 
-	// ─── Wildcard Search ─────────────────────────────────────────────────
+	// Wildcard Search
 	t.Run("WildcardSearch", func(t *testing.T) {
 		// Prefix
 		t.Run("Prefix_Failed_610", func(t *testing.T) {
@@ -645,7 +645,7 @@ func TestRegression_SortElimination(t *testing.T) {
 func TestRegression_OpenStack(t *testing.T) {
 	eng := openstackEngine(t)
 
-	// ─── Ingestion ───────────────────────────────────────────────────────
+	// Ingestion
 	t.Run("Ingestion", func(t *testing.T) {
 		t.Run("TotalCount_2000", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | STATS count`)
@@ -653,7 +653,7 @@ func TestRegression_OpenStack(t *testing.T) {
 		})
 	})
 
-	// ─── Search ──────────────────────────────────────────────────────────
+	// Search
 	t.Run("Search", func(t *testing.T) {
 		t.Run("VMStarted_22", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | search "VM Started" | STATS count`)
@@ -669,7 +669,7 @@ func TestRegression_OpenStack(t *testing.T) {
 		})
 	})
 
-	// ─── WHERE ───────────────────────────────────────────────────────────
+	// WHERE
 	t.Run("WHERE", func(t *testing.T) {
 		t.Run("OR_VMStartedOrStopped_43", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | WHERE match(_raw, "VM Started") OR match(_raw, "VM Stopped") | STATS count`)
@@ -681,7 +681,7 @@ func TestRegression_OpenStack(t *testing.T) {
 		})
 	})
 
-	// ─── REX ─────────────────────────────────────────────────────────────
+	// REX
 	t.Run("REX", func(t *testing.T) {
 		t.Run("LogLevel_INFO1969_WARNING31", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | REX "\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+ \d+ (?<log_level>\w+)" | STATS count BY log_level | SORT log_level`)
@@ -722,7 +722,7 @@ func TestRegression_OpenStack(t *testing.T) {
 		})
 	})
 
-	// ─── EVAL ────────────────────────────────────────────────────────────
+	// EVAL
 	t.Run("EVAL", func(t *testing.T) {
 		t.Run("Arithmetic_SlowRequests_81", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main
@@ -752,7 +752,7 @@ func TestRegression_OpenStack(t *testing.T) {
 		})
 	})
 
-	// ─── STATS ───────────────────────────────────────────────────────────
+	// STATS
 	t.Run("STATS", func(t *testing.T) {
 		t.Run("CountBY_Status200_933", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | REX "status: (?<status>\d+)" | WHERE isnotnull(status) | STATS count BY status | SORT - count`)
@@ -803,7 +803,7 @@ func TestRegression_OpenStack(t *testing.T) {
 		})
 	})
 
-	// ─── BIN ─────────────────────────────────────────────────────────────
+	// BIN
 	t.Run("BIN", func(t *testing.T) {
 		t.Run("Span5m_SumsTo2000", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | BIN _time span=5m AS time_bucket | STATS count BY time_bucket | SORT time_bucket`)
@@ -824,7 +824,7 @@ func TestRegression_OpenStack(t *testing.T) {
 		})
 	})
 
-	// ─── EVENTSTATS ──────────────────────────────────────────────────────
+	// EVENTSTATS
 	t.Run("EVENTSTATS", func(t *testing.T) {
 		t.Run("GlobalAggregation_1017", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main
@@ -860,7 +860,7 @@ func TestRegression_OpenStack(t *testing.T) {
 		})
 	})
 
-	// ─── Complex Pipelines ───────────────────────────────────────────────
+	// Complex Pipelines
 	t.Run("ComplexPipelines", func(t *testing.T) {
 		t.Run("InstanceLifecycle_AtLeast3Types", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main
@@ -896,7 +896,7 @@ func TestRegression_OpenStack(t *testing.T) {
 		})
 	})
 
-	// ─── Wildcard Search ─────────────────────────────────────────────────
+	// Wildcard Search
 	t.Run("WildcardSearch", func(t *testing.T) {
 		t.Run("LifecycleEvent_109", func(t *testing.T) {
 			rows := mustQuery(t, eng, `FROM main | search "*Lifecycle Event*" | STATS count`)

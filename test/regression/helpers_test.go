@@ -11,7 +11,7 @@ import (
 	"github.com/OrlovEvgeny/Lynxdb/pkg/storage"
 )
 
-// ─── Project root resolution ─────────────────────────────────────────────────
+// Project root resolution
 
 func projectRoot() string {
 	_, filename, _, _ := runtime.Caller(0)
@@ -24,7 +24,7 @@ func testdataPath(relPath string) string {
 	return filepath.Join(projectRoot(), "testdata", relPath)
 }
 
-// ─── Shared engine fixtures (initialized once per test binary run) ───────────
+// Shared engine fixtures (initialized once per test binary run)
 
 var (
 	sshOnce   sync.Once
@@ -87,7 +87,7 @@ func openstackEngine(t *testing.T) *storage.Engine {
 	return openstackEng
 }
 
-// ─── Query helper ────────────────────────────────────────────────────────────
+// Query helper
 
 // mustQuery executes an SPL2 query against the engine and fatals on error.
 func mustQuery(t *testing.T, eng *storage.Engine, spl2 string) []map[string]interface{} {
@@ -102,7 +102,7 @@ func mustQuery(t *testing.T, eng *storage.Engine, spl2 string) []map[string]inte
 	return res.Rows
 }
 
-// ─── Assertion helpers ───────────────────────────────────────────────────────
+// Assertion helpers
 
 // requireRowCount fatals if the number of rows doesn't match expected.
 func requireRowCount(t *testing.T, rows []map[string]interface{}, expected int) {
@@ -170,7 +170,7 @@ func rowsToMap(rows []map[string]interface{}, keyField, valueField string) map[s
 	return m
 }
 
-// ─── Type conversions ────────────────────────────────────────────────────────
+// Type conversions
 
 func toInt(v interface{}) int {
 	switch val := v.(type) {

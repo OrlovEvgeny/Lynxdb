@@ -119,11 +119,10 @@ detect_os() {
     case "$os" in
         linux*)   OS="linux" ;;
         darwin*)  OS="darwin" ;;
-        freebsd*) OS="freebsd" ;;
         msys*|mingw*|cygwin*) OS="windows" ;;
         *)
             error "Unsupported operating system: $os"
-            error "LynxDB supports Linux, macOS, FreeBSD, and Windows (via WSL/Git Bash)."
+            error "LynxDB supports Linux, macOS, and Windows (via WSL/Git Bash)."
             exit 1
             ;;
     esac
