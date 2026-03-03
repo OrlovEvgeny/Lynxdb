@@ -1,7 +1,4 @@
 # Binaries
-/cmd/lynxdb/lynxdb
-/cmd/lynxctl/lynxctl
-lynxdb
 /testdata/db
 *.exe
 
@@ -38,3 +35,5 @@ dashboard.md
 CLAUDE.md
 /docs/site/node_modules/
 /docs/site/build/
+lynxdb
+!/cmd/lynxdb/
