@@ -1,3 +1,10 @@
+.heroLogo {
+  width: 96px;
+  height: auto;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.3));
+}
+
 .heroBanner {
   padding: 4rem 0;
   text-align: center;

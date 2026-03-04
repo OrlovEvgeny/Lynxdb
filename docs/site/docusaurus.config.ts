@@ -80,8 +80,9 @@ const config: Config = {
       title: 'LynxDB',
       logo: {
         alt: 'LynxDB Logo',
-        src: 'img/logo.svg',
-        srcDark: 'img/logo-dark.svg',
+        src: 'img/lynxdb-icon.png',
+        srcDark: 'img/lynxdb-icon.png',
+        style: {height: '32px'},
       },
       items: [
         {

@@ -14,7 +14,7 @@ import (
 // Template variables: .BinaryPath, .ConfigPath, .User, .Group, .DataDir.
 const systemdTemplate = `[Unit]
 Description=LynxDB - open-source log analytics engine
-Documentation=https://lynxdb.org/docs
+Documentation=https://docs.lynxdb.org/
 After=network-online.target
 Wants=network-online.target
 

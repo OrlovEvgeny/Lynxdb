@@ -118,7 +118,7 @@ Create `/etc/systemd/system/lynxdb.service`:
 ```ini
 [Unit]
 Description=LynxDB Log Analytics Database
-Documentation=https://lynxdb.org/docs
+Documentation=https://docs.lynxdb.org/
 After=network-online.target
 Wants=network-online.target
 

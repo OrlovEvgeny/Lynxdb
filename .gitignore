@@ -37,3 +37,4 @@ CLAUDE.md
 /docs/site/build/
 lynxdb
 !/cmd/lynxdb/
+/tmp/

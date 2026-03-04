@@ -35,6 +35,11 @@ function HomepageHeader() {
   return (
     <header className={clsx('hero hero--lynxdb', styles.heroBanner)}>
       <div className="container">
+        <img
+          src="/img/lynxdb-icon.png"
+          alt="LynxDB Logo"
+          className={styles.heroLogo}
+        />
         <Heading as="h1" className="hero__title">
           {siteConfig.title}
         </Heading>

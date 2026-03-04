@@ -552,7 +552,7 @@ print_completion() {
         printf '    %s\n' "${CYAN}sudo lynxdb install${RESET}            ${DIM}# Set up systemd service + production config${RESET}"
         printf '\n'
     fi
-    printf '  %s\n' "${DIM}Docs:    https://lynxdb.org/docs${RESET}"
+    printf '  %s\n' "${DIM}Docs:    https://docs.lynxdb.org/${RESET}"
     printf '  %s\n' "${DIM}Discord: https://discord.gg/lynxdb${RESET}"
     printf '\n'
 }
