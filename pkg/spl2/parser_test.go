@@ -1356,3 +1356,72 @@ func TestParse_IndexWithWhere(t *testing.T) {
 		t.Fatalf("cmd[0]: expected WhereCommand, got %T", q.Commands[0])
 	}
 }
+
+func TestParse_StatsPercentileAliases(t *testing.T) {
+	// Verify that p50..p99 shorthand aliases are normalized to perc50..perc99
+	// at parse time so downstream code only sees the canonical names.
+	tests := []struct {
+		input    string
+		wantFunc string
+		wantAlias string
+	}{
+		{`| stats p99(duration) by host`, "perc99", ""},
+		{`| stats p50(latency) as median`, "perc50", "median"},
+		{`| stats p75(response_time) as rt_p75`, "perc75", "rt_p75"},
+		{`| stats p90(bytes) as p90_bytes`, "perc90", "p90_bytes"},
+		{`| stats p95(dur)`, "perc95", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			q, err := Parse(tt.input)
+			if err != nil {
+				t.Fatalf("Parse(%q): %v", tt.input, err)
+			}
+			if len(q.Commands) != 1 {
+				t.Fatalf("Commands: got %d, want 1", len(q.Commands))
+			}
+			stats, ok := q.Commands[0].(*StatsCommand)
+			if !ok {
+				t.Fatalf("cmd[0]: expected StatsCommand, got %T", q.Commands[0])
+			}
+			if len(stats.Aggregations) != 1 {
+				t.Fatalf("aggs: got %d, want 1", len(stats.Aggregations))
+			}
+			agg := stats.Aggregations[0]
+			if agg.Func != tt.wantFunc {
+				t.Errorf("Func: got %q, want %q", agg.Func, tt.wantFunc)
+			}
+			if agg.Alias != tt.wantAlias {
+				t.Errorf("Alias: got %q, want %q", agg.Alias, tt.wantAlias)
+			}
+		})
+	}
+}
+
+func TestParse_StatsMultiplePercentileAliases(t *testing.T) {
+	// Verify multiple percentile aliases in a single stats command.
+	q, err := Parse(`| stats p50(dur), p99(dur), count by service`)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(q.Commands) != 1 {
+		t.Fatalf("Commands: got %d, want 1", len(q.Commands))
+	}
+	stats, ok := q.Commands[0].(*StatsCommand)
+	if !ok {
+		t.Fatalf("cmd[0]: expected StatsCommand, got %T", q.Commands[0])
+	}
+	if len(stats.Aggregations) != 3 {
+		t.Fatalf("aggs: got %d, want 3", len(stats.Aggregations))
+	}
+	wantFuncs := []string{"perc50", "perc99", "count"}
+	for i, want := range wantFuncs {
+		if stats.Aggregations[i].Func != want {
+			t.Errorf("agg[%d].Func: got %q, want %q", i, stats.Aggregations[i].Func, want)
+		}
+	}
+	if len(stats.GroupBy) != 1 || stats.GroupBy[0] != "service" {
+		t.Errorf("GroupBy: got %v, want [service]", stats.GroupBy)
+	}
+}

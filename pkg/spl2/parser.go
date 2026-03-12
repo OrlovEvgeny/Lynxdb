@@ -2237,7 +2237,21 @@ func (p *Parser) parseAggList() ([]AggExpr, error) {
 		}
 		p.advance() // consume )
 
-		agg := AggExpr{Func: funcName, Args: args}
+		// Normalize shorthand percentile aliases: p50 → perc50, etc.
+		normalizedFunc := funcName
+		switch strings.ToLower(funcName) {
+		case "p50":
+			normalizedFunc = "perc50"
+		case "p75":
+			normalizedFunc = "perc75"
+		case "p90":
+			normalizedFunc = "perc90"
+		case "p95":
+			normalizedFunc = "perc95"
+		case "p99":
+			normalizedFunc = "perc99"
+		}
+		agg := AggExpr{Func: normalizedFunc, Args: args}
 
 		// Optional "as alias".
 		if p.peek().Type == TokenAs {
