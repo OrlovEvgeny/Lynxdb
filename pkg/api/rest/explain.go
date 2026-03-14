@@ -16,6 +16,9 @@ func (s *Server) handleQueryExplain(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+	if !s.checkQueryLength(w, q) {
+		return
+	}
 
 	// EXPLAIN ANALYZE: execute the query with profiling and return plan + stats.
 	if r.URL.Query().Get("analyze") == "true" {

@@ -1,0 +1,61 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  block-size: 100vh;
+  block-size: 100dvh;
+}
+
+.topbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  block-size: 48px;
+  flex-shrink: 0;
+  padding-inline: 1rem;
+  background: var(--bg-secondary);
+  border-block-end: 1px solid var(--border);
+}
+
+.logo {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.logo:hover {
+  color: var(--text-primary);
+}
+
+.logoMark {
+  color: var(--accent);
+}
+
+.navLinks {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  margin-inline-start: auto;
+}
+
+.navLinks a {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  padding-block: 0.25rem;
+  transition: color 150ms ease;
+}
+
+.navLinks a:hover {
+  color: var(--text-primary);
+}
+
+.active {
+  color: var(--text-primary);
+}
+
+.content {
+  flex: 1;
+  overflow: auto;
+}
