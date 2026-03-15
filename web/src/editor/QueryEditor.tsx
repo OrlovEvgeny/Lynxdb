@@ -1,6 +1,6 @@
-import { useRef, useEffect } from "preact/hooks";
-import { EditorState } from "@codemirror/state";
-import { EditorView, keymap, placeholder } from "@codemirror/view";
+import { useRef, useEffect, useCallback } from "preact/hooks";
+import { Compartment, EditorState } from "@codemirror/state";
+import { EditorView, keymap, placeholder, lineNumbers } from "@codemirror/view";
 import { defaultKeymap } from "@codemirror/commands";
 import { acceptCompletion, completionStatus } from "@codemirror/autocomplete";
 import { lynxflowLanguage } from "./lynxflow-lang";
@@ -20,11 +20,22 @@ export interface QueryEditorHandle {
   focus: () => void;
 }
 
+// Compartment for dynamically toggling line numbers based on line count
+const lineNumberCompartment = new Compartment();
+
 export function QueryEditor({ value, onChange, onExecute, editorRef }: QueryEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const onExecuteRef = useRef(onExecute);
+
+  // Manual height ref: null = auto-expand mode, number = user set explicit height via drag
+  const manualHeightRef = useRef<number | null>(null);
+  // Track current line number state to avoid infinite reconfigure loop (Pitfall 1)
+  const hasLineNumbersRef = useRef(false);
+  // Track the height at drag start for computing delta
+  const dragStartHeightRef = useRef<number>(0);
 
   // Keep callback refs current without recreating the editor
   onChangeRef.current = onChange;
@@ -50,10 +61,33 @@ export function QueryEditor({ value, onChange, onExecute, editorRef }: QueryEdit
         lynxTheme,
         lynxHighlighting,
         lynxflowAutocompletion(),
+        // Shift+Enter for newline: placed AFTER autocomplete to avoid Pitfall 5
+        keymap.of([{
+          key: "Shift-Enter",
+          run: (view) => {
+            view.dispatch(view.state.replaceSelection("\n"));
+            return true;
+          },
+        }]),
         placeholder('from main | where level="error" | group by _source compute count()'),
+        // Dynamic line numbers via Compartment: starts with no line numbers (single line)
+        lineNumberCompartment.of([]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             onChangeRef.current(update.state.doc.toString());
+
+            // Toggle line numbers based on line count (Pitfall 1: guard with comparison)
+            const lineCount = update.state.doc.lines;
+            const shouldHaveNumbers = lineCount >= 2;
+
+            if (shouldHaveNumbers !== hasLineNumbersRef.current) {
+              hasLineNumbersRef.current = shouldHaveNumbers;
+              update.view.dispatch({
+                effects: lineNumberCompartment.reconfigure(
+                  shouldHaveNumbers ? lineNumbers() : []
+                ),
+              });
+            }
           }
         }),
         // Enter: accept completion if open, otherwise run query
@@ -98,6 +132,7 @@ export function QueryEditor({ value, onChange, onExecute, editorRef }: QueryEdit
     return () => {
       view.destroy();
       viewRef.current = null;
+      hasLineNumbersRef.current = false;
       if (editorRef) editorRef(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run once
@@ -112,8 +147,64 @@ export function QueryEditor({ value, onChange, onExecute, editorRef }: QueryEdit
       view.dispatch({
         changes: { from: 0, to: current.length, insert: value },
       });
+
+      // Also check line numbers for externally set values
+      const lineCount = view.state.doc.lines;
+      const shouldHaveNumbers = lineCount >= 2;
+      if (shouldHaveNumbers !== hasLineNumbersRef.current) {
+        hasLineNumbersRef.current = shouldHaveNumbers;
+        view.dispatch({
+          effects: lineNumberCompartment.reconfigure(
+            shouldHaveNumbers ? lineNumbers() : []
+          ),
+        });
+      }
     }
   }, [value]);
 
-  return <div ref={containerRef} class={styles.editorWrap} />;
+  // Drag handle pointer event handlers
+  const handlePointerDown = useCallback((e: PointerEvent) => {
+    e.preventDefault();
+    const target = e.currentTarget as HTMLElement;
+    target.setPointerCapture(e.pointerId);
+
+    // Capture the current height of the wrap element at drag start
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    dragStartHeightRef.current = wrap.getBoundingClientRect().height;
+    const startY = e.clientY;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      const maxHeight = window.innerHeight * 0.5; // 50vh cap
+      const newHeight = Math.max(38, Math.min(dragStartHeightRef.current + deltaY, maxHeight));
+      manualHeightRef.current = newHeight;
+      if (wrapRef.current) {
+        wrapRef.current.style.height = `${newHeight}px`;
+      }
+    };
+
+    const onUp = () => {
+      target.removeEventListener("pointermove", onMove);
+      target.removeEventListener("pointerup", onUp);
+    };
+
+    target.addEventListener("pointermove", onMove);
+    target.addEventListener("pointerup", onUp);
+  }, []);
+
+  return (
+    <div class={styles.editorContainer}>
+      <div ref={wrapRef} class={styles.editorWrap}>
+        <div ref={containerRef} />
+      </div>
+      <div
+        class={styles.dragHandle}
+        onPointerDown={handlePointerDown}
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize query editor"
+      />
+    </div>
+  );
 }

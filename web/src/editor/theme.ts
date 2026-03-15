@@ -8,10 +8,15 @@ export const lynxTheme = EditorView.theme({
     color: "var(--text-primary)",
     fontSize: "14px",
     fontFamily: "var(--font-mono)",
+    maxHeight: "50vh",
+  },
+  ".cm-scroller": {
+    overflow: "auto",
   },
   ".cm-content": {
     caretColor: "var(--accent)",
     padding: "8px 12px",
+    minHeight: "20px",
   },
   ".cm-cursor": {
     borderLeftColor: "var(--accent)",
@@ -23,7 +28,10 @@ export const lynxTheme = EditorView.theme({
     backgroundColor: "transparent",
   },
   ".cm-gutters": {
-    display: "none",
+    backgroundColor: "var(--bg-secondary)",
+    borderRight: "1px solid var(--border)",
+    color: "var(--text-muted)",
+    fontSize: "12px",
   },
   "&.cm-focused": {
     outline: "1px solid var(--accent)",
@@ -60,9 +68,29 @@ export const lynxTheme = EditorView.theme({
     fontStyle: "normal",
     marginLeft: "8px",
   },
+  /* Completion icon styling: colored circle-dot per type */
   ".cm-completionIcon": {
-    opacity: "0.6",
+    fontSize: "0",
+    width: "16px",
+    height: "16px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: "4px",
+    opacity: "1",
   },
+  ".cm-completionIcon::after": {
+    content: '""',
+    display: "block",
+    width: "8px",
+    height: "8px",
+    borderRadius: "50%",
+  },
+  ".cm-completionIcon-keyword::after": { backgroundColor: "#4F46E5" },   // indigo -- commands
+  ".cm-completionIcon-property::after": { backgroundColor: "#0d9488" },   // teal -- fields
+  ".cm-completionIcon-function::after": { backgroundColor: "#7c3aed" },   // purple -- functions
+  ".cm-completionIcon-text::after": { backgroundColor: "#6b7280" },       // gray -- values
+  ".cm-completionIcon-variable::after": { backgroundColor: "#2563eb" },   // blue -- indexes
 }, { dark: false });
 
 export const lynxHighlighting = syntaxHighlighting(HighlightStyle.define([
