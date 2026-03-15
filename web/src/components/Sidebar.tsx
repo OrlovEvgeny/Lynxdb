@@ -38,7 +38,7 @@ export function Sidebar() {
     <nav class={styles.sidebar}>
       <div class={styles.top}>
         <a href="/" class={styles.logo}>
-          <img src="/favicon.svg" alt="" class={styles.logoIcon} />
+          <img src="/lynxdb-icon.png" alt="LynxDB" class={styles.logoIcon} />
           <span class={styles.logoText}>LynxDB</span>
         </a>
         {NAV_ITEMS.map(({ path, icon: Icon, label }) => (
