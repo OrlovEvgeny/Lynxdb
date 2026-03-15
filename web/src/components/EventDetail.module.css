@@ -1,11 +1,33 @@
+/* Backdrop overlay behind the slide-out panel */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: calc(var(--z-overlay) - 1);
+}
+
+/* Slide-out panel from the right */
 .panel {
-  flex-shrink: 0;
-  block-size: 40%;
-  min-block-size: 200px;
+  position: fixed;
+  inset-inline-end: 0;
+  inset-block-start: 0;
+  block-size: 100vh;
+  inline-size: 400px;
   display: flex;
   flex-direction: column;
-  border-block-start: 1px solid var(--border);
   background: var(--bg-secondary);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-overlay);
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 .toolbar {
@@ -88,40 +110,115 @@
   padding: 0.5rem 0.75rem;
 }
 
-/* Fields tab */
-.fieldsTable {
-  inline-size: 100%;
-  border-collapse: collapse;
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
+/* ----- Fields tab ----- */
+
+.fieldsList {
+  display: flex;
+  flex-direction: column;
 }
 
-.fieldsTable tr:nth-child(even) {
-  background: var(--bg-tertiary);
+.fieldRow {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  border-block-end: 1px solid var(--bg-tertiary);
 }
 
 .fieldKey {
-  padding: 0.25rem 0.75rem 0.25rem 0;
   color: var(--text-secondary);
   white-space: nowrap;
-  vertical-align: top;
-  inline-size: 1%;
+  flex-shrink: 0;
 }
 
 .fieldValue {
-  padding: 0.25rem 0;
   color: var(--text-primary);
   word-break: break-all;
+  flex: 1;
+  min-inline-size: 0;
 }
 
-/* JSON tab */
-.jsonPre {
+.fieldActions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.filterBtn,
+.excludeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 20px;
+  block-size: 20px;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.1s, color 0.1s, border-color 0.1s;
+  line-height: 1;
+}
+
+.filterBtn {
+  color: var(--accent);
+}
+
+.filterBtn:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+}
+
+.excludeBtn {
+  color: var(--error);
+}
+
+.excludeBtn:hover {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: var(--error);
+}
+
+/* ----- JSON tab: collapsible tree ----- */
+
+.jsonTree {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-all;
-  margin: 0;
+}
+
+.jsonNode {
+  white-space: nowrap;
+}
+
+.jsonToggle {
+  display: inline-block;
+  inline-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--text-muted);
+  font-size: 0.625rem;
+  text-align: center;
+  margin-inline-end: 2px;
+  transition: color 0.1s;
+}
+
+.jsonToggle:hover {
+  color: var(--accent);
+}
+
+.jsonChildren {
+  /* Children indentation is handled via inline padding-left on each node */
+}
+
+.jsonCollapsed {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.75rem;
 }
 
 .jsonKey {

@@ -33,6 +33,7 @@ import {
   downloadFile,
   generateFilename,
 } from "../utils/export";
+import { appendFilter } from "../utils/filterQuery";
 import type {
   QueryResult,
   QueryStats,
@@ -42,6 +43,7 @@ import type {
   ViewSummary,
   ExplainResult,
   HistogramBucket,
+  FieldInfo,
 } from "../api/client";
 import type { TailEvent } from "../api/sse";
 import styles from "./SearchView.module.css";
@@ -70,6 +72,7 @@ const sidebarIndexes = signal<IndexInfo[]>([]);
 const sidebarViews = signal<ViewSummary[]>([]);
 const explainResult = signal<ExplainResult | null>(null);
 const fieldTypeMap = signal<Map<string, string>>(new Map());
+const catalogFields = signal<FieldInfo[]>([]);
 
 /* --- Part 4: Live Tail signals --- */
 const tailActive = signal(false);
@@ -333,6 +336,23 @@ export function SearchView(_props: Props) {
         changes: { from: 0, to: view.state.doc.length, insert: newQuery },
       });
     }
+  }, []);
+
+  /* --- Filter handler (from EventDetail [+]/[-] buttons) --- */
+  const handleFilter = useCallback((field: string, value: string, exclude: boolean) => {
+    const newQuery = appendFilter(query.value, field, value, exclude);
+    query.value = newQuery;
+    page.value = 1; // Reset to page 1 on filter change (Pitfall 6)
+
+    // Update editor content to show the new query
+    const view = getEditorView?.();
+    if (view) {
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: newQuery },
+      });
+    }
+
+    runQueryAndRefresh(newQuery, from.value, to.value, 1, pageSize.value);
   }, []);
 
   /* --- Pagination handlers --- */
@@ -712,6 +732,7 @@ export function SearchView(_props: Props) {
             <EventDetail
               event={selectedEvent.value}
               onClose={handleCloseDetail}
+              onFilter={handleFilter}
             />
           </div>
 
