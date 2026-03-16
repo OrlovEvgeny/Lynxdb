@@ -39,19 +39,53 @@ export interface AggregateResult {
 
 export type QueryResult = EventsResult | AggregateResult;
 
+/** A single optimizer rule applied during query optimization. */
+export interface OptimizerRule {
+  name: string;
+  description?: string;
+  count: number;
+}
+
+/** Detailed per-query performance stats from the backend metaStats envelope. */
+export interface DetailedStats {
+  rows_scanned?: number;
+  rows_returned?: number;
+  matched_rows?: number;
+  segments_total?: number;
+  segments_scanned?: number;
+  segments_skipped_bloom?: number;
+  segments_skipped_time?: number;
+  segments_skipped_index?: number;
+  segments_skipped_stats?: number;
+  segments_skipped_range?: number;
+  inverted_index_hits?: number;
+  count_star_optimized?: boolean;
+  partial_agg_used?: boolean;
+  topk_used?: boolean;
+  prefetch_used?: boolean;
+  vectorized_filter_used?: boolean;
+  dict_filter_used?: boolean;
+  cache_hit?: boolean;
+  scan_ms?: number;
+  pipeline_ms?: number;
+  parse_ms?: number;
+  optimize_ms?: number;
+  optimizer_rules?: OptimizerRule[];
+  total_rules?: number;
+  accelerated_by?: string;
+  mv_speedup?: string;
+  processed_bytes?: number;
+  disk_bytes_read?: number;
+  s3_bytes_read?: number;
+  cache_bytes_read?: number;
+}
+
 /** Query execution stats from meta envelope */
 export interface QueryStats {
   took_ms: number;
   scanned: number;
   query_id?: string;
-  stats?: {
-    rows_scanned?: number;
-    rows_returned?: number;
-    matched_rows?: number;
-    segments_total?: number;
-    segments_scanned?: number;
-    [key: string]: unknown;
-  };
+  stats?: DetailedStats & { [key: string]: unknown };
 }
 
 export interface QueryResponse {
@@ -228,8 +262,33 @@ export interface ExplainResult {
     pipeline: PipelineStage[];
     result_type: string;
     fields_read: string[];
-    source_scope?: { type: string; resolved_sources?: string[] };
+    source_scope?: {
+      type: string;
+      resolved_sources?: string[];
+      pattern?: string;
+      total_sources_available?: number;
+    };
+    // Extended fields for explain inspector
+    estimated_cost?: string;
+    uses_full_scan?: boolean;
+    search_terms?: string[];
+    has_time_bounds?: boolean;
+    optimizer_stats?: Record<string, number>;
+    optimizer_rules?: OptimizerRule[];
+    total_rules?: number;
+    parse_ms?: number;
+    optimize_ms?: number;
+    physical_plan?: {
+      count_star_only?: boolean;
+      partial_agg?: boolean;
+      topk_agg?: boolean;
+      topk?: number;
+      join_strategy?: string;
+    };
+    optimizer_messages?: string[];
+    optimizer_warnings?: string[];
   };
+  acceleration?: { available: boolean };
 }
 
 export async function fetchExplain(

@@ -23,6 +23,7 @@ export interface TailCallbacks {
   onCatchupDone: (count: number) => void;
   onError: (message: string) => void;
   onWarning: (message: string) => void;
+  onReconnecting?: (isReconnecting: boolean) => void;
 }
 
 /**
@@ -49,6 +50,15 @@ export function startTail(
   }
 
   const source = new EventSource(`/api/v1/tail?${params}`);
+
+  // Debounced reconnection state: only fire onReconnecting(true) after 1s
+  // of continuous disconnection to avoid flicker on transient errors (Pitfall 4).
+  let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+
+  source.onopen = () => {
+    clearTimeout(reconnectTimer);
+    callbacks.onReconnecting?.(false);
+  };
 
   source.addEventListener("result", (e: MessageEvent) => {
     try {
@@ -78,9 +88,17 @@ export function startTail(
   source.onerror = () => {
     if (source.readyState === EventSource.CLOSED) {
       callbacks.onError("Tail connection closed");
+    } else if (source.readyState === EventSource.CONNECTING) {
+      // Debounce: only show reconnecting if disconnected > 1s (Pitfall 4)
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => {
+        callbacks.onReconnecting?.(true);
+      }, 1000);
     }
-    // EventSource auto-reconnects on transient errors — no action needed
   };
 
-  return () => source.close();
+  return () => {
+    clearTimeout(reconnectTimer);
+    source.close();
+  };
 }
