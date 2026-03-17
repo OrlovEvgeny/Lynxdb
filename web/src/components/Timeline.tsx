@@ -472,7 +472,7 @@ function barsPaths(widthFactor: number): uPlot.Series.PathBuilder {
     const dataSpacing = xData.length > 1 ? xData[1] - xData[0] : 60;
     const xMin = xScale.min ?? xData[0];
     const xMax = xScale.max ?? xData[xData.length - 1];
-    const plotWidth = u.bbox.width / devicePixelRatio;
+    const plotWidth = u.bbox.width;
     const xRange = xMax - xMin || 1;
     const barWidthPx = Math.max(1, (dataSpacing / xRange) * plotWidth * widthFactor);
 
@@ -481,9 +481,9 @@ function barsPaths(widthFactor: number): uPlot.Series.PathBuilder {
 
     const yMin = yScale.min ?? 0;
     const yMax = yScale.max ?? 1;
-    const plotHeight = u.bbox.height / devicePixelRatio;
-    const plotLeft = u.bbox.left / devicePixelRatio;
-    const plotTop = u.bbox.top / devicePixelRatio;
+    const plotHeight = u.bbox.height;
+    const plotLeft = u.bbox.left;
+    const plotTop = u.bbox.top;
 
     for (let i = 0; i < xData.length; i++) {
       const xVal = xData[i];
@@ -530,7 +530,7 @@ function stackedBarsPaths(widthFactor: number, seriesLevel: number): uPlot.Serie
     const dataSpacing = xData.length > 1 ? xData[1] - xData[0] : 60;
     const xMin = xScale.min ?? xData[0];
     const xMax = xScale.max ?? xData[xData.length - 1];
-    const plotWidth = u.bbox.width / devicePixelRatio;
+    const plotWidth = u.bbox.width;
     const xRange = xMax - xMin || 1;
     const barWidthPx = Math.max(1, (dataSpacing / xRange) * plotWidth * widthFactor);
 
@@ -539,9 +539,9 @@ function stackedBarsPaths(widthFactor: number, seriesLevel: number): uPlot.Serie
     const yMin = yScale.min ?? 0;
     const yMax = yScale.max ?? 1;
     const yRange = yMax - yMin || 1;
-    const plotHeight = u.bbox.height / devicePixelRatio;
-    const plotLeft = u.bbox.left / devicePixelRatio;
-    const plotTop = u.bbox.top / devicePixelRatio;
+    const plotHeight = u.bbox.height;
+    const plotLeft = u.bbox.left;
+    const plotTop = u.bbox.top;
 
     for (let i = 0; i < xData.length; i++) {
       const xVal = xData[i];
