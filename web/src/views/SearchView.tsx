@@ -360,11 +360,9 @@ function runQueryAndRefresh(
         return;
       }
 
-      // SLOW PATH: query is async -- clear previous results
+      // SLOW PATH: query is async — clear stats immediately; results cleared lazily on first row
       batch(() => {
-        result.value = null;
         stats.value = null;
-        selectedEvent.value = null;
       });
 
       if (resultType === "events") {
@@ -373,25 +371,26 @@ function runQueryAndRefresh(
         streamingCount.value = 0;
         const rows: Record<string, unknown>[] = [];
         let streamMeta: { total?: number; scanned?: number; took_ms?: number } = {};
+        let firstRowSeen = false;
 
         streamQuery(q, fromVal, toVal, {
           onRow(row) {
             rows.push(row);
-            // Only keep up to pageSize rows for display
-            if (rows.length <= currentSize) {
-              batch(() => {
-                streamingCount.value = rows.length;
-                // Update result incrementally for live display
-                result.value = {
-                  type: "events",
-                  events: rows.slice(0, currentSize),
-                  total: rows.length,
-                  has_more: false,
-                } satisfies EventsResult;
-              });
-            } else {
-              streamingCount.value = rows.length;
+            if (!firstRowSeen) {
+              firstRowSeen = true;
+              // Clear previous results on first actual row — preserves them during 200ms hybrid wait
+              result.value = null;
+              selectedEvent.value = null;
             }
+            batch(() => {
+              streamingCount.value = rows.length;
+              result.value = {
+                type: "events",
+                events: rows.slice(0, currentSize),
+                total: rows.length,
+                has_more: false,
+              } satisfies EventsResult;
+            });
           },
           onMeta(meta) {
             streamMeta = meta;
