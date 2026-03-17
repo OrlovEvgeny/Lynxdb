@@ -4,7 +4,8 @@ import type { Signal } from "@preact/signals";
 import {
   PRESETS,
   getTimeRangeLabel,
-  parseRelativeExpression,
+  toNowExpr,
+  parseNowExpression,
 } from "../utils/timeFormat";
 import styles from "./TimeRangePicker.module.css";
 
@@ -18,12 +19,63 @@ const open = signal(false);
 
 export function TimeRangePicker({ from, to, onApply }: TimeRangePickerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [customFrom, setCustomFrom] = useState("");
-  const [customTo, setCustomTo] = useState("");
-  const [relativeExpr, setRelativeExpr] = useState("");
+  const [fromInput, setFromInput] = useState("");
+  const [toInput, setToInput] = useState("");
+  const [quickSearch, setQuickSearch] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const handleSelect = useCallback(
+  // Sync inputs when dropdown opens
+  useEffect(() => {
+    if (open.value) {
+      setFromInput(toNowExpr(from.value));
+      setToInput(toNowExpr(to.value));
+      setQuickSearch("");
+      setValidationError(null);
+    }
+  }, [open.value]);
+
+  // Apply absolute/relative inputs from left panel
+  const handleApply = useCallback(() => {
+    setValidationError(null);
+
+    const parsedFrom = parseNowExpression(fromInput);
+    const parsedTo = parseNowExpression(toInput);
+
+    if (parsedFrom === null) {
+      // Try as ISO date
+      const d = new Date(fromInput);
+      if (isNaN(d.getTime())) {
+        setValidationError("Invalid From value. Use now-3h or ISO date.");
+        return;
+      }
+      from.value = d.toISOString();
+    } else if (parsedFrom === undefined) {
+      // "now" as from doesn't make sense, but allow it
+      setValidationError("From cannot be 'now'. Use a relative offset like now-1h.");
+      return;
+    } else {
+      from.value = parsedFrom;
+    }
+
+    if (parsedTo === null) {
+      const d = new Date(toInput);
+      if (isNaN(d.getTime())) {
+        setValidationError("Invalid To value. Use now or now-30m or ISO date.");
+        return;
+      }
+      to.value = d.toISOString();
+    } else if (parsedTo === undefined) {
+      to.value = undefined;
+    } else {
+      to.value = parsedTo;
+    }
+
+    open.value = false;
+    onApply?.();
+  }, [from, to, onApply, fromInput, toInput]);
+
+  // Click a quick-range preset
+  const handlePreset = useCallback(
     (value: string) => {
       from.value = value;
       to.value = undefined;
@@ -33,41 +85,7 @@ export function TimeRangePicker({ from, to, onApply }: TimeRangePickerProps) {
     [from, to, onApply],
   );
 
-  const handleApply = useCallback(() => {
-    setValidationError(null);
-
-    // Priority: relative expression > datetime-local inputs
-    if (relativeExpr.trim()) {
-      const parsed = parseRelativeExpression(relativeExpr);
-      if (!parsed) {
-        setValidationError("Invalid format. Use: 2h ago to 30m ago");
-        return;
-      }
-      from.value = parsed.from;
-      to.value = parsed.to;
-      open.value = false;
-      setRelativeExpr("");
-      setCustomFrom("");
-      setCustomTo("");
-      onApply?.();
-      return;
-    }
-
-    if (customFrom && customTo) {
-      from.value = new Date(customFrom).toISOString();
-      to.value = new Date(customTo).toISOString();
-      open.value = false;
-      setCustomFrom("");
-      setCustomTo("");
-      setRelativeExpr("");
-      onApply?.();
-      return;
-    }
-
-    // Neither input has values -- do nothing
-  }, [from, to, onApply, relativeExpr, customFrom, customTo]);
-
-  // Close dropdown on outside click
+  // Close on outside click
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
       if (
@@ -82,6 +100,30 @@ export function TimeRangePicker({ from, to, onApply }: TimeRangePickerProps) {
       document.removeEventListener("pointerdown", onPointerDown, true);
   }, []);
 
+  // Close on Escape
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && open.value) {
+        open.value = false;
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  // Filter presets by search
+  const filteredPresets = quickSearch
+    ? PRESETS.filter((p) =>
+        p.label.toLowerCase().includes(quickSearch.toLowerCase()),
+      )
+    : PRESETS;
+
+  // Determine which preset is active
+  const activePreset =
+    (to.value === undefined || to.value === "now")
+      ? PRESETS.find((p) => p.value === from.value)?.value ?? null
+      : null;
+
   return (
     <div class={styles.wrapper} ref={wrapperRef}>
       <button
@@ -90,64 +132,48 @@ export function TimeRangePicker({ from, to, onApply }: TimeRangePickerProps) {
         onClick={() => {
           open.value = !open.value;
         }}
-        aria-haspopup="listbox"
+        aria-haspopup="dialog"
         aria-expanded={open.value}
       >
-        <span class={styles.triggerIcon}>&#9202;</span>
+        <svg class={styles.triggerIcon} viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5.5" /><path d="M7 4.5V7l2 1.5" /></svg>
         {getTimeRangeLabel(from.value, to.value)}
       </button>
+
       {open.value && (
-        <div class={styles.dropdown} role="listbox" aria-label="Time range">
-          {PRESETS.map((preset) => (
-            <button
-              key={preset.value}
-              type="button"
-              role="option"
-              aria-selected={from.value === preset.value}
-              class={`${styles.option} ${from.value === preset.value ? styles.optionActive : ""}`}
-              onClick={() => handleSelect(preset.value)}
-            >
-              {preset.label}
-            </button>
-          ))}
+        <div class={styles.dropdown} role="dialog" aria-label="Time range picker">
+          {/* Left panel: absolute time range */}
+          <div class={styles.leftPanel}>
+            <div class={styles.panelTitle}>Absolute time range</div>
 
-          <div class={styles.divider} />
-
-          <div class={styles.customSection}>
-            <div class={styles.customRow}>
-              <label class={styles.customLabel}>From</label>
-              <input
-                type="datetime-local"
-                class={styles.customInput}
-                value={customFrom}
-                onInput={(e) => {
-                  setCustomFrom((e.target as HTMLInputElement).value);
-                  setValidationError(null);
-                }}
-              />
-            </div>
-            <div class={styles.customRow}>
-              <label class={styles.customLabel}>To</label>
-              <input
-                type="datetime-local"
-                class={styles.customInput}
-                value={customTo}
-                onInput={(e) => {
-                  setCustomTo((e.target as HTMLInputElement).value);
-                  setValidationError(null);
-                }}
-              />
-            </div>
-
-            <div class={styles.customRow}>
-              <label class={styles.customLabel}>Relative</label>
+            <div class={styles.inputGroup}>
+              <label class={styles.inputLabel}>From</label>
               <input
                 type="text"
-                class={styles.customInput}
-                placeholder="e.g. 2h ago to 30m ago"
-                value={relativeExpr}
+                class={styles.textInput}
+                value={fromInput}
+                placeholder="now-1h"
                 onInput={(e) => {
-                  setRelativeExpr((e.target as HTMLInputElement).value);
+                  setFromInput((e.target as HTMLInputElement).value);
+                  setValidationError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleApply();
+                  }
+                }}
+              />
+            </div>
+
+            <div class={styles.inputGroup}>
+              <label class={styles.inputLabel}>To</label>
+              <input
+                type="text"
+                class={styles.textInput}
+                value={toInput}
+                placeholder="now"
+                onInput={(e) => {
+                  setToInput((e.target as HTMLInputElement).value);
                   setValidationError(null);
                 }}
                 onKeyDown={(e) => {
@@ -168,8 +194,33 @@ export function TimeRangePicker({ from, to, onApply }: TimeRangePickerProps) {
               class={styles.applyBtn}
               onClick={handleApply}
             >
-              Apply
+              Apply time range
             </button>
+          </div>
+
+          {/* Right panel: quick ranges */}
+          <div class={styles.rightPanel}>
+            <input
+              type="text"
+              class={styles.searchInput}
+              placeholder="Search quick ranges"
+              value={quickSearch}
+              onInput={(e) =>
+                setQuickSearch((e.target as HTMLInputElement).value)
+              }
+            />
+            <div class={styles.presetList}>
+              {filteredPresets.map((preset) => (
+                <button
+                  key={preset.value}
+                  type="button"
+                  class={`${styles.presetItem} ${activePreset === preset.value ? styles.presetItemActive : ""}`}
+                  onClick={() => handlePreset(preset.value)}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

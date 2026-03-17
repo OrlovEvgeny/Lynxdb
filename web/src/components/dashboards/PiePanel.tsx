@@ -1,15 +1,5 @@
 import type { AggregateResult } from "../../api/client";
-
-const PALETTE = [
-  "#4F46E5",
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#6b7280",
-];
+import { CHART_COLORS } from "../../utils/chartColors";
 
 interface Slice {
   label: string;
@@ -80,7 +70,7 @@ export function PiePanel({ data }: { data: AggregateResult }) {
   const slices: Slice[] = data.rows.map((row, i) => ({
     label: String(row[categoryIdx] ?? ""),
     value: Number(row[valIdx]) || 0,
-    color: PALETTE[i % PALETTE.length],
+    color: CHART_COLORS[i % CHART_COLORS.length],
     pct: (((Number(row[valIdx]) || 0) / total) * 100).toFixed(1),
   }));
 

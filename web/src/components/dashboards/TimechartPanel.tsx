@@ -2,17 +2,7 @@ import { useRef, useEffect } from "preact/hooks";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import type { AggregateResult } from "../../api/client";
-
-const COLORS = [
-  "#4F46E5",
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-];
+import { CHART_COLORS, chartAxisFont, chartGridStroke, chartAxisStroke } from "../../utils/chartColors";
 
 export function TimechartPanel({ data }: { data: AggregateResult }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,13 +35,13 @@ export function TimechartPanel({ data }: { data: AggregateResult }) {
         {},
         ...seriesNames.map((name, i) => ({
           label: name,
-          stroke: COLORS[i % COLORS.length],
+          stroke: CHART_COLORS[i % CHART_COLORS.length],
           width: 2,
         })),
       ],
       axes: [
-        { show: true, font: "10px sans-serif", size: 20, gap: 2 },
-        { show: true, font: "10px sans-serif", size: 40, gap: 4 },
+        { show: true, font: chartAxisFont(), stroke: chartAxisStroke(), grid: { stroke: chartGridStroke(), width: 1 }, size: 20, gap: 2 },
+        { show: true, font: chartAxisFont(), stroke: chartAxisStroke(), grid: { stroke: chartGridStroke(), width: 1 }, size: 40, gap: 4 },
       ],
       legend: { show: seriesNames.length > 1 },
       cursor: { show: true, points: { show: false } },

@@ -9,7 +9,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font-size: 0.75rem;
-  background: var(--bg-primary);
+  background: var(--input-bg);
   color: var(--text-primary);
   margin-bottom: 4px;
   outline: none;
@@ -27,26 +27,7 @@
   font-weight: 500;
   font-size: 0.75rem;
   color: var(--text-secondary);
-  cursor: pointer;
   user-select: none;
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-}
-
-.sectionHeader:hover {
-  color: var(--text-primary);
-}
-
-.sectionChevron {
-  font-size: 0.625rem;
-  transition: transform 0.15s;
-  display: inline-block;
-}
-
-.sectionCollapsed .sectionChevron {
-  transform: rotate(-90deg);
 }
 
 .fieldRow {
@@ -90,28 +71,28 @@
 }
 
 .typeBadgeStr {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+  background: rgba(87, 148, 242, 0.1);
+  color: #5794f2;
 }
 
 .typeBadgeInt {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
+  background: rgba(115, 191, 105, 0.1);
+  color: #73bf69;
 }
 
 .typeBadgeFlt {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
+  background: rgba(255, 152, 48, 0.1);
+  color: #ff9830;
 }
 
 .typeBadgeTs {
-  background: rgba(139, 92, 246, 0.1);
-  color: #8b5cf6;
+  background: rgba(184, 119, 217, 0.1);
+  color: #b877d9;
 }
 
 .typeBadgeBool {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: rgba(242, 73, 92, 0.1);
+  color: #f2495c;
 }
 
 .coverage {
@@ -131,10 +112,4 @@
   color: var(--text-muted);
   padding: 8px 0;
   text-align: center;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sectionChevron {
-    transition: none;
-  }
 }

@@ -7,7 +7,7 @@
 }
 
 .editorWrap {
-  min-height: 38px;
+  min-height: var(--toolbar-height);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
@@ -29,5 +29,5 @@
 }
 
 .dragHandle:hover {
-  background: rgba(79, 70, 229, 0.3);
+  background: var(--accent-subtle-hover);
 }

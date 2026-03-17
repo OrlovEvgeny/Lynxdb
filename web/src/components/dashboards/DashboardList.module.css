@@ -46,7 +46,7 @@
   display: block;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   padding: var(--space-4);
   cursor: pointer;
   text-decoration: none;
@@ -107,7 +107,7 @@
   padding: var(--space-4);
   background: var(--bg-secondary);
   border: 1px solid var(--error);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   color: var(--error);
   font-size: 0.875rem;
 }

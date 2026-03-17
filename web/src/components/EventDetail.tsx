@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback } from "preact/hooks";
+import { useState, useCallback } from "preact/hooks";
 import type { JSX } from "preact";
 import styles from "./EventDetail.module.css";
 
-interface EventDetailProps {
-  event: Record<string, unknown> | null;
-  onClose: () => void;
+export interface EventDetailInlineProps {
+  event: Record<string, unknown>;
   onFilter?: (field: string, value: string, exclude: boolean) => void;
 }
 
@@ -214,113 +213,80 @@ function JsonNode({ data, depth, keyName }: JsonNodeProps): JSX.Element {
 }
 
 // ---------------------------------------------------------------------------
-// EventDetail component
+// Inline event detail accordion (replaces the old slide-out panel)
 // ---------------------------------------------------------------------------
 
-export function EventDetail({ event, onClose, onFilter }: EventDetailProps) {
+export function EventDetailInline({ event, onFilter }: EventDetailInlineProps) {
   const [tab, setTab] = useState<TabId>("fields");
 
-  // Close on Escape
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
-
   const handleCopy = useCallback(() => {
-    if (event) {
-      navigator.clipboard.writeText(JSON.stringify(event, null, 2)).catch(() => {
-        // clipboard write can fail in non-HTTPS contexts; silently ignore
-      });
-    }
+    navigator.clipboard.writeText(JSON.stringify(event, null, 2)).catch(() => {
+      // clipboard write can fail in non-HTTPS contexts; silently ignore
+    });
   }, [event]);
-
-  if (!event) return null;
 
   const entries = Object.entries(event);
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        class={styles.backdrop}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Slide-out panel */}
-      <div class={styles.panel} role="complementary" aria-label="Event details">
-        <div class={styles.toolbar}>
-          <button
-            type="button"
-            class={`${styles.tab} ${tab === "fields" ? styles.tabActive : ""}`}
-            onClick={() => setTab("fields")}
-          >
-            Fields
-          </button>
-          <button
-            type="button"
-            class={`${styles.tab} ${tab === "json" ? styles.tabActive : ""}`}
-            onClick={() => setTab("json")}
-          >
-            JSON
-          </button>
-          <div class={styles.spacer} />
-          <button type="button" class={styles.copyBtn} onClick={handleCopy}>
-            Copy JSON
-          </button>
-          <button
-            type="button"
-            class={styles.closeBtn}
-            onClick={onClose}
-            aria-label="Close detail panel"
-          >
-            &times;
-          </button>
-        </div>
-        <div class={styles.body}>
-          {tab === "fields" ? (
-            <div class={styles.fieldsList}>
-              {entries.map(([key, value]) => (
-                <div key={key} class={styles.fieldRow}>
-                  <span class={styles.fieldKey}>{key}</span>
-                  <span class={styles.fieldValue}>
-                    {value == null ? "" : String(value)}
-                  </span>
-                  <span class={styles.fieldActions}>
-                    <button
-                      type="button"
-                      class={styles.filterBtn}
-                      onClick={() => onFilter?.(key, String(value ?? ""), false)}
-                      title={`Filter: ${key}="${value}"`}
-                      aria-label={`Include ${key} equals ${value}`}
-                    >
-                      +
-                    </button>
-                    <button
-                      type="button"
-                      class={styles.excludeBtn}
-                      onClick={() => onFilter?.(key, String(value ?? ""), true)}
-                      title={`Exclude: ${key}!="${value}"`}
-                      aria-label={`Exclude ${key} equals ${value}`}
-                    >
-                      &minus;
-                    </button>
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div class={styles.jsonTree}>
-              <JsonNode data={event} depth={0} />
-            </div>
-          )}
-        </div>
+    <div class={styles.accordion}>
+      <div class={styles.toolbar}>
+        <button
+          type="button"
+          class={`${styles.tab} ${tab === "fields" ? styles.tabActive : ""}`}
+          onClick={() => setTab("fields")}
+        >
+          Fields
+        </button>
+        <button
+          type="button"
+          class={`${styles.tab} ${tab === "json" ? styles.tabActive : ""}`}
+          onClick={() => setTab("json")}
+        >
+          JSON
+        </button>
+        <div class={styles.spacer} />
+        <button type="button" class={styles.copyBtn} onClick={handleCopy}>
+          Copy JSON
+        </button>
       </div>
-    </>
+      <div class={styles.body}>
+        {tab === "fields" ? (
+          <div class={styles.fieldsList}>
+            {entries.map(([key, value]) => (
+              <div key={key} class={styles.fieldRow}>
+                <span class={styles.fieldKey}>{key}</span>
+                <span class={styles.fieldValue}>
+                  {value == null ? "" : String(value)}
+                </span>
+                <span class={styles.fieldActions}>
+                  <button
+                    type="button"
+                    class={styles.filterBtn}
+                    onClick={() => onFilter?.(key, String(value ?? ""), false)}
+                    title={`Filter: ${key}="${value}"`}
+                    aria-label={`Include ${key} equals ${value}`}
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    class={styles.excludeBtn}
+                    onClick={() => onFilter?.(key, String(value ?? ""), true)}
+                    title={`Exclude: ${key}!="${value}"`}
+                    aria-label={`Exclude ${key} equals ${value}`}
+                  >
+                    &minus;
+                  </button>
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div class={styles.jsonTree}>
+            <JsonNode data={event} depth={0} />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

@@ -18,11 +18,11 @@
 }
 
 .eventSelected {
-  background: rgba(79, 70, 229, 0.08);
+  background: var(--accent-subtle);
 }
 
 .eventSelected:hover {
-  background: rgba(79, 70, 229, 0.12);
+  background: var(--accent-subtle-hover);
 }
 
 .eventHeader {
@@ -65,6 +65,12 @@
 
 .fieldValue:hover {
   background: var(--bg-tertiary);
+}
+
+.accordionRow {
+  border-block-end: 1px solid var(--border);
+  max-height: 400px;
+  overflow: hidden;
 }
 
 .empty {

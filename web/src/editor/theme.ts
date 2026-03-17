@@ -15,14 +15,14 @@ export const lynxTheme = EditorView.theme({
   },
   ".cm-content": {
     caretColor: "var(--accent)",
-    padding: "8px 12px",
-    minHeight: "20px",
+    padding: "6px 12px",
+    minHeight: "18px",
   },
   ".cm-cursor": {
     borderLeftColor: "var(--accent)",
   },
   "&.cm-focused .cm-selectionBackground, .cm-selectionBackground": {
-    backgroundColor: "rgba(79, 70, 229, 0.12)",
+    backgroundColor: "rgba(50, 116, 217, 0.14)",
   },
   ".cm-activeLine": {
     backgroundColor: "transparent",
@@ -34,8 +34,7 @@ export const lynxTheme = EditorView.theme({
     fontSize: "12px",
   },
   "&.cm-focused": {
-    outline: "1px solid var(--accent)",
-    borderRadius: "var(--radius)",
+    outline: "none",
   },
   ".cm-placeholder": {
     color: "var(--text-muted)",
@@ -45,7 +44,7 @@ export const lynxTheme = EditorView.theme({
     backgroundColor: "var(--bg-primary)",
     border: "1px solid var(--border)",
     borderRadius: "var(--radius)",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+    boxShadow: "none",
     overflow: "hidden",
   },
   ".cm-tooltip-autocomplete ul": {
@@ -86,14 +85,14 @@ export const lynxTheme = EditorView.theme({
     height: "8px",
     borderRadius: "50%",
   },
-  ".cm-completionIcon-keyword::after": { backgroundColor: "#4F46E5" },   // indigo -- commands
-  ".cm-completionIcon-property::after": { backgroundColor: "#0d9488" },   // teal -- fields
-  ".cm-completionIcon-function::after": { backgroundColor: "#7c3aed" },   // purple -- functions
-  ".cm-completionIcon-text::after": { backgroundColor: "#6b7280" },       // gray -- values
-  ".cm-completionIcon-variable::after": { backgroundColor: "#2563eb" },   // blue -- indexes
+  ".cm-completionIcon-keyword::after": { backgroundColor: "#3274d9" },   // blue -- commands
+  ".cm-completionIcon-property::after": { backgroundColor: "#73bf69" },   // green -- fields
+  ".cm-completionIcon-function::after": { backgroundColor: "#b877d9" },   // purple -- functions
+  ".cm-completionIcon-text::after": { backgroundColor: "#8e8e8e" },       // gray -- values
+  ".cm-completionIcon-variable::after": { backgroundColor: "#5794f2" },   // blue -- indexes
   /* Diagnostic (lint) styling for syntax error underlines and tooltips */
   ".cm-diagnostic-error": {
-    borderBottom: "2px solid #ef4444",
+    borderBottom: "2px solid #f2495c",
     paddingBottom: "1px",
   },
   ".cm-tooltip-lint": {
@@ -107,13 +106,13 @@ export const lynxTheme = EditorView.theme({
 }, { dark: false });
 
 export const lynxHighlighting = syntaxHighlighting(HighlightStyle.define([
-  { tag: tags.keyword, color: "#4F46E5" },
-  { tag: tags.definitionKeyword, color: "#4F46E5" },
-  { tag: tags.function(tags.variableName), color: "#7c3aed" },
-  { tag: tags.operator, color: "#c4432b" },
-  { tag: tags.string, color: "#2563eb" },
-  { tag: tags.number, color: "#0d9488" },
-  { tag: tags.bool, color: "#c4432b" },
+  { tag: tags.keyword, color: "#3274d9" },
+  { tag: tags.definitionKeyword, color: "#3274d9" },
+  { tag: tags.function(tags.variableName), color: "#b877d9" },
+  { tag: tags.operator, color: "#f2495c" },
+  { tag: tags.string, color: "#5794f2" },
+  { tag: tags.number, color: "#73bf69" },
+  { tag: tags.bool, color: "#f2495c" },
   { tag: tags.comment, color: "var(--text-muted)", fontStyle: "italic" },
   { tag: tags.punctuation, color: "var(--text-secondary)" },
   { tag: tags.name, color: "var(--text-primary)" },

@@ -1,7 +1,8 @@
-import { useRef, useState, useCallback, useLayoutEffect } from "preact/hooks";
-import { ChevronRight } from "lucide-preact";
+import { useRef, useState, useCallback, useLayoutEffect, useEffect, useMemo } from "preact/hooks";
+import { ChevronRight, ChevronDown } from "lucide-preact";
 import type { QueryResult, EventsResult, AggregateResult } from "../api/client";
 import { updateSortInQuery, parseSortFromQuery } from "../utils/sortQuery";
+import { EventDetailInline } from "./EventDetail";
 import styles from "./ResultsTable.module.css";
 
 // ---------------------------------------------------------------------------
@@ -10,13 +11,10 @@ import styles from "./ResultsTable.module.css";
 
 interface ResultsTableProps {
   result: QueryResult | null;
-  onRowClick: (row: Record<string, unknown>) => void;
-  selectedRow: Record<string, unknown> | null;
   onSort?: (newQuery: string) => void;
   currentQuery?: string;
   isAggregation?: boolean;
-  wrap?: boolean;
-  onCellCopy?: (value: string, x: number, y: number) => void;
+  onFilter?: (field: string, value: string, exclude: boolean) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -26,6 +24,44 @@ interface ResultsTableProps {
 const ROW_HEIGHT = 28;
 const OVERSCAN = 5;
 const MIN_COL_WIDTH = 60;
+const MAX_ACCORDION_HEIGHT = 400;
+
+function getAccordionHeight(event: Record<string, unknown>): number {
+  const fieldCount = Object.keys(event).length;
+  return Math.min(fieldCount * 28 + 52, MAX_ACCORDION_HEIGHT);
+}
+
+/** Compute default pixel widths by sampling row data */
+function computeDefaultWidths(
+  columns: string[],
+  getRow: (i: number) => Record<string, unknown>,
+  rowCount: number,
+): Record<string, number> {
+  const widths: Record<string, number> = {};
+  const sampleSize = Math.min(rowCount, 50);
+
+  for (const col of columns) {
+    if (col === "_time") {
+      widths[col] = 140;
+      continue;
+    }
+
+    let maxLen = col.length;
+    for (let i = 0; i < sampleSize; i++) {
+      const val = getRow(i)[col];
+      const str = val == null ? "" : String(val);
+      if (str.length > maxLen) maxLen = str.length;
+    }
+
+    let width = Math.max(80, Math.min(600, maxLen * 7.8 + 24));
+    if (col === "_raw" || col === "message") {
+      width = Math.max(200, Math.min(600, width));
+    }
+    widths[col] = Math.round(width);
+  }
+
+  return widths;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -129,26 +165,46 @@ function useTableData(result: QueryResult | null): {
 
 export function ResultsTable({
   result,
-  onRowClick,
-  selectedRow,
   onSort,
   currentQuery,
   isAggregation,
-  wrap = false,
-  onCellCopy,
+  onFilter,
 }: ResultsTableProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(600);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
   const [resizingCol, setResizingCol] = useState<string | null>(null);
+  const [expandedRowIndex, setExpandedRowIndex] = useState<number | null>(null);
 
   const { columns, rowCount, getRow, isAgg } = useTableData(result);
+
+  const defaultWidths = useMemo(
+    () => computeDefaultWidths(columns, getRow, rowCount),
+    [result],
+  );
 
   const effectiveIsAgg = isAggregation ?? isAgg;
 
   // Parse current sort state from query
   const currentSort = currentQuery ? parseSortFromQuery(currentQuery) : null;
+
+  // Close accordion on Escape
+  useEffect(() => {
+    if (expandedRowIndex === null) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setExpandedRowIndex(null);
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [expandedRowIndex]);
+
+  // Reset expanded row when result changes
+  useEffect(() => {
+    setExpandedRowIndex(null);
+  }, [result]);
 
   // Track viewport height via ResizeObserver
   useLayoutEffect(() => {
@@ -242,6 +298,12 @@ export function ResultsTable({
     [onSort, currentQuery, currentSort],
   );
 
+  // ---- Row expand handler ----
+
+  const handleRowToggle = useCallback((index: number) => {
+    setExpandedRowIndex((prev) => (prev === index ? null : index));
+  }, []);
+
   // ---- Early returns ----
 
   if (!result) {
@@ -254,15 +316,12 @@ export function ResultsTable({
 
   // ---- Grid template ----
 
-  // Build grid-template-columns: gutter + data columns
+  // Build grid-template-columns: gutter + data columns (fixed pixel widths for alignment)
   const dataColTemplate = columns
     .map((col) => {
       const stored = columnWidths[col];
       if (stored != null) return `${stored}px`;
-      // Default auto-fit widths
-      if (col === "_time") return "minmax(80px, max-content)";
-      if (col === "_raw" || col === "message") return "minmax(200px, max-content)";
-      return "minmax(80px, max-content)";
+      return `${defaultWidths[col] ?? 120}px`;
     })
     .join(" ");
 
@@ -272,20 +331,26 @@ export function ResultsTable({
   // ---- Determine if _time is sticky ----
   const hasTimeCol = !effectiveIsAgg && columns.includes("_time");
 
-  // ---- Virtual scroll calculations ----
-  const useVirtualScroll = !wrap;
-  const totalHeight = rowCount * ROW_HEIGHT;
+  // ---- Virtual scroll calculations (with accordion offset) ----
+  const accordionHeight = expandedRowIndex !== null
+    ? getAccordionHeight(getRow(expandedRowIndex))
+    : 0;
+  const totalHeight = rowCount * ROW_HEIGHT + accordionHeight;
 
   let startIndex: number;
   let endIndex: number;
 
-  if (useVirtualScroll) {
-    startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
-    const visibleCount = Math.ceil(viewportHeight / ROW_HEIGHT) + OVERSCAN * 2;
-    endIndex = Math.min(rowCount, startIndex + visibleCount);
-  } else {
-    startIndex = 0;
-    endIndex = rowCount;
+  startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
+  const visibleCount = Math.ceil(viewportHeight / ROW_HEIGHT) + OVERSCAN * 2;
+  endIndex = Math.min(rowCount, startIndex + visibleCount);
+
+  // Ensure expanded row is in the visible range
+  if (expandedRowIndex !== null) {
+    if (expandedRowIndex < startIndex) startIndex = expandedRowIndex;
+    if (expandedRowIndex >= endIndex) endIndex = expandedRowIndex + 1;
+    // Also extend the range to account for accordion pushing rows down
+    const extraRows = Math.ceil(accordionHeight / ROW_HEIGHT);
+    endIndex = Math.min(rowCount, endIndex + extraRows);
   }
 
   // ---- Render rows ----
@@ -293,22 +358,22 @@ export function ResultsTable({
   const visibleRows = [];
   for (let i = startIndex; i < endIndex; i++) {
     const row = getRow(i);
-    const isSelected =
-      selectedRow === row ||
-      (selectedRow !== null &&
-        selectedRow._time === row._time &&
-        selectedRow._raw === row._raw);
+    const isExpanded = expandedRowIndex === i;
+
+    // Calculate Y offset: rows after the expanded row are pushed down by accordion height
+    let yOffset = i * ROW_HEIGHT;
+    if (expandedRowIndex !== null && i > expandedRowIndex) {
+      yOffset += accordionHeight;
+    }
 
     const rowClasses = [
-      useVirtualScroll ? styles.row : styles.rowWrap,
-      isSelected ? styles.rowSelected : "",
+      styles.row,
+      isExpanded ? styles.rowSelected : "",
     ]
       .filter(Boolean)
       .join(" ");
 
-    const rowStyle = useVirtualScroll
-      ? { ...gridStyle, transform: `translateY(${i * ROW_HEIGHT}px)` }
-      : gridStyle;
+    const rowStyle = { ...gridStyle, transform: `translateY(${yOffset}px)` };
 
     visibleRows.push(
       <div
@@ -317,13 +382,14 @@ export function ResultsTable({
         style={rowStyle}
         role="row"
         aria-rowindex={i + 1}
+        onClick={() => handleRowToggle(i)}
       >
         <div
-          class={styles.gutter}
-          onClick={(e: MouseEvent) => { e.stopPropagation(); onRowClick(row); }}
-          title="Expand event"
+          class={`${styles.gutter} ${isExpanded ? styles.gutterExpanded : ""}`}
+          onClick={(e: MouseEvent) => { e.stopPropagation(); handleRowToggle(i); }}
+          title={isExpanded ? "Collapse event" : "Expand event"}
         >
-          <ChevronRight size={12} />
+          {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         </div>
         {columns.map((col) => {
           const raw = row[col];
@@ -336,7 +402,6 @@ export function ResultsTable({
             isTime ? styles.cellTime : "",
             hasTimeCol && isTime ? styles.cellSticky : "",
             effectiveIsAgg && isNumeric(raw) ? styles.cellNumber : "",
-            wrap ? styles.cellWrap : "",
           ]
             .filter(Boolean)
             .join(" ");
@@ -347,19 +412,27 @@ export function ResultsTable({
               class={cellClasses}
               title={fullValue}
               role="cell"
-              onClick={(e: MouseEvent) => {
-                if (onCellCopy && fullValue) {
-                  e.stopPropagation();
-                  onCellCopy(fullValue, e.clientX, e.clientY);
-                }
-              }}
             >
-              {wrap ? fullValue : display}
+              {display}
             </div>
           );
         })}
       </div>,
     );
+
+    // Render accordion below expanded row
+    if (isExpanded) {
+      const accordionY = (i + 1) * ROW_HEIGHT;
+      visibleRows.push(
+        <div
+          key={`accordion-${i}`}
+          class={styles.accordionRow}
+          style={{ transform: `translateY(${accordionY}px)`, height: accordionHeight }}
+        >
+          <EventDetailInline event={row} onFilter={onFilter} />
+        </div>,
+      );
+    }
   }
 
   // ---- Render ----
@@ -405,7 +478,7 @@ export function ResultsTable({
         {/* Scroll content area */}
         <div
           class={styles.scrollContent}
-          style={useVirtualScroll ? { height: totalHeight } : undefined}
+          style={{ height: totalHeight }}
         >
           {visibleRows}
         </div>

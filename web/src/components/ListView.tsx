@@ -1,11 +1,12 @@
+import { useState, useCallback } from "preact/hooks";
 import type { QueryResult, EventsResult, AggregateResult } from "../api/client";
+import { EventDetailInline } from "./EventDetail";
 import styles from "./ListView.module.css";
 
 interface ListViewProps {
   result: QueryResult | null;
-  onRowClick: (row: Record<string, unknown>) => void;
-  selectedRow: Record<string, unknown> | null;
   onCellCopy?: (value: string, x: number, y: number) => void;
+  onFilter?: (field: string, value: string, exclude: boolean) => void;
 }
 
 /** Derive columns from events: _time first, then _raw, _source, source, then alphabetical */
@@ -69,8 +70,13 @@ function useTableData(result: QueryResult | null): {
   };
 }
 
-export function ListView({ result, onRowClick, selectedRow, onCellCopy }: ListViewProps) {
+export function ListView({ result, onCellCopy, onFilter }: ListViewProps) {
   const { columns, rowCount, getRow } = useTableData(result);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  const handleToggle = useCallback((i: number) => {
+    setExpandedIndex((prev) => (prev === i ? null : i));
+  }, []);
 
   if (!result || rowCount === 0) {
     return <div class={styles.empty}>No results</div>;
@@ -79,17 +85,13 @@ export function ListView({ result, onRowClick, selectedRow, onCellCopy }: ListVi
   const events = [];
   for (let i = 0; i < rowCount; i++) {
     const row = getRow(i);
-    const isSelected =
-      selectedRow === row ||
-      (selectedRow !== null &&
-        selectedRow._time === row._time &&
-        selectedRow._raw === row._raw);
+    const isExpanded = expandedIndex === i;
 
     events.push(
       <div
         key={i}
-        class={`${styles.event} ${isSelected ? styles.eventSelected : ""}`}
-        onClick={() => onRowClick(row)}
+        class={`${styles.event} ${isExpanded ? styles.eventSelected : ""}`}
+        onClick={() => handleToggle(i)}
       >
         <div class={styles.eventHeader}>Event {i + 1}</div>
         {columns.map((col) => {
@@ -114,6 +116,14 @@ export function ListView({ result, onRowClick, selectedRow, onCellCopy }: ListVi
         })}
       </div>,
     );
+
+    if (isExpanded) {
+      events.push(
+        <div key={`accordion-${i}`} class={styles.accordionRow}>
+          <EventDetailInline event={row} onFilter={onFilter} />
+        </div>,
+      );
+    }
   }
 
   return (

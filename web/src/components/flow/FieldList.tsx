@@ -15,7 +15,7 @@ export function FieldList({
   fieldTypes,
   onInsertCommand,
 }: FieldListProps) {
-  const [allExpanded, setAllExpanded] = useState(false);
+  const [allExpanded, setAllExpanded] = useState(true);
 
   const handleToggleAll = useCallback(() => {
     setAllExpanded((prev) => !prev);

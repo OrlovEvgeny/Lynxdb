@@ -4,7 +4,6 @@ import { QueryEditor } from "../editor/QueryEditor";
 import type { QueryEditorHandle } from "../editor/QueryEditor";
 import { TimeRangePicker } from "../components/TimeRangePicker";
 import { ResultsTable } from "../components/ResultsTable";
-import { EventDetail } from "../components/EventDetail";
 import { QueryStatsBar } from "../components/QueryStats";
 import { FlowSidebar } from "../components/FlowSidebar";
 import { Timeline } from "../components/Timeline";
@@ -86,7 +85,6 @@ const result = signal<QueryResult | null>(null);
 const stats = signal<QueryStats | null>(null);
 const loading = signal(false);
 const error = signal<string | null>(null);
-const selectedEvent = signal<Record<string, unknown> | null>(null);
 
 /* --- Part 3 signals --- */
 const sidebarVisible = signal(true);
@@ -134,7 +132,6 @@ const elapsedMs = signal(0);
 const page = signal(1);
 const pageSize = signal(100);
 const viewMode = signal<"table" | "list">("table");
-const wrap = signal(false);
 const copyTooltip = signal<{ visible: boolean; x: number; y: number }>({ visible: false, x: 0, y: 0 });
 
 /** Maximum events to keep in the live tail buffer */
@@ -380,7 +377,6 @@ function runQueryAndRefresh(
               firstRowSeen = true;
               // Clear previous results on first actual row — preserves them during 200ms hybrid wait
               result.value = null;
-              selectedEvent.value = null;
             }
             batch(() => {
               streamingCount.value = rows.length;
@@ -665,14 +661,6 @@ export function SearchView(_props: Props) {
     runQueryAndRefresh(query.value.trim(), from.value, to.value, 1, pageSize.value);
   }, []);
 
-  const handleRowClick = useCallback((row: Record<string, unknown>) => {
-    selectedEvent.value = row;
-  }, []);
-
-  const handleCloseDetail = useCallback(() => {
-    selectedEvent.value = null;
-  }, []);
-
   const handleSidebarToggle = useCallback(() => {
     sidebarVisible.value = !sidebarVisible.value;
   }, []);
@@ -758,10 +746,6 @@ export function SearchView(_props: Props) {
   /* --- View mode and wrap handlers --- */
   const handleViewModeChange = useCallback((mode: "table" | "list") => {
     viewMode.value = mode;
-  }, []);
-
-  const handleWrapChange = useCallback((w: boolean) => {
-    wrap.value = w;
   }, []);
 
   /* --- Cell copy handler --- */
@@ -862,7 +846,6 @@ export function SearchView(_props: Props) {
     result.value = null;
     stats.value = null;
     error.value = null;
-    selectedEvent.value = null;
     autoScrollPaused.current = false;
 
     const cleanup = startTail(q, from.value, 100, {
@@ -927,8 +910,7 @@ export function SearchView(_props: Props) {
     onToggleTail: handleTailToggle,
     onToggleSidebar: () => { sidebarVisible.value = !sidebarVisible.value; },
     onClosePanel: () => {
-      // Layered close: event detail > explain inspector > blur editor
-      if (selectedEvent.value) { selectedEvent.value = null; return; }
+      // Layered close: explain inspector > blur editor
       if (explainOpen.value) { explainOpen.value = false; return; }
       editorHandleRef.current?.getView()?.contentDOM.blur();
     },
@@ -1140,8 +1122,6 @@ export function SearchView(_props: Props) {
             <TableToolbar
               viewMode={viewMode.value}
               onViewModeChange={handleViewModeChange}
-              wrap={wrap.value}
-              onWrapChange={handleWrapChange}
               onExport={handleExport}
               totalCount={totalCount}
               pageCount={pageCount}
@@ -1168,27 +1148,18 @@ export function SearchView(_props: Props) {
               viewMode.value === "table" ? (
                 <ResultsTable
                   result={activeResult}
-                  onRowClick={handleRowClick}
-                  selectedRow={selectedEvent.value}
                   onSort={handleSort}
                   currentQuery={query.value}
-                  wrap={wrap.value}
-                  onCellCopy={handleCellCopy}
+                  onFilter={handleFilter}
                 />
               ) : (
                 <ListView
                   result={activeResult}
-                  onRowClick={handleRowClick}
-                  selectedRow={selectedEvent.value}
                   onCellCopy={handleCellCopy}
+                  onFilter={handleFilter}
                 />
               )
             )}
-            <EventDetail
-              event={selectedEvent.value}
-              onClose={handleCloseDetail}
-              onFilter={handleFilter}
-            />
           </div>
 
           {/* Pagination bar -- only show for non-tail, non-empty results */}

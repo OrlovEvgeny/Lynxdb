@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback, useState } from "preact/hooks";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import type { HistogramBucket, HistogramBucketGrouped } from "../api/client";
+import { cssVar, chartAxisFont } from "../utils/chartColors";
 import styles from "./Timeline.module.css";
 
 /** Stacking order from bottom to top */
@@ -9,11 +10,11 @@ const LEVEL_ORDER = ["debug", "info", "warn", "error"];
 
 /** Colors per log level */
 const LEVEL_COLORS: Record<string, string> = {
-  error: "#dc2626",
-  warn: "#d97706",
-  info: "#3b82f6",
-  debug: "#9ca3af",
-  other: "#d1d5db",
+  error: "#f2495c",
+  warn: "#ff9830",
+  info: "#5794f2",
+  debug: "#8e8e8e",
+  other: "#6e6e6e",
 };
 
 interface TimelineProps {
@@ -25,13 +26,6 @@ interface TimelineProps {
   onBrush?: (from: number, to: number) => void;
   onReset?: () => void;
   showReset?: boolean;
-}
-
-/** Read a CSS custom property value from :root */
-function cssVar(name: string): string {
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim();
 }
 
 /**
@@ -267,7 +261,7 @@ export function Timeline({
             stroke: textMuted,
             grid: { show: true, stroke: borderColor, width: 1 },
             ticks: { show: false },
-            font: "10px sans-serif",
+            font: chartAxisFont(),
             size: 20,
             gap: 2,
           },
@@ -290,7 +284,7 @@ export function Timeline({
     } else {
       // -- Ungrouped mode (backward compatible) --
       const data = toUPlotData(buckets);
-      const accentColor = cssVar("--accent") || "#4F46E5";
+      const accentColor = cssVar("--accent") || "#3274d9";
       const barWidthFactor = buckets.length > 1 ? 0.85 : 0.5;
 
       const opts: uPlot.Options = {
@@ -332,7 +326,7 @@ export function Timeline({
             stroke: textMuted,
             grid: { show: true, stroke: borderColor, width: 1 },
             ticks: { show: false },
-            font: "10px sans-serif",
+            font: chartAxisFont(),
             size: 20,
             gap: 2,
           },

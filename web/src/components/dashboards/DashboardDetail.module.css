@@ -48,7 +48,7 @@
   margin-top: var(--space-4);
   padding: var(--space-4);
   border: 2px dashed var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: none;
   color: var(--text-secondary);
   cursor: pointer;

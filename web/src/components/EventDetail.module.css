@@ -1,33 +1,12 @@
-/* Backdrop overlay behind the slide-out panel */
-.backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: calc(var(--z-overlay) - 1);
-}
-
-/* Slide-out panel from the right */
-.panel {
-  position: fixed;
-  inset-inline-end: 0;
-  inset-block-start: 0;
-  block-size: 100vh;
-  inline-size: 400px;
+/* Inline accordion that expands below a table row */
+.accordion {
+  background: var(--bg-secondary);
+  border-block-start: 1px solid var(--border);
+  border-block-end: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  background: var(--bg-secondary);
-  box-shadow: var(--shadow-lg);
-  z-index: var(--z-overlay);
-  animation: slideIn 0.2s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+  max-height: 400px;
+  overflow: hidden;
 }
 
 .toolbar {
@@ -80,27 +59,6 @@
 
 .copyBtn:hover {
   border-color: var(--accent);
-  color: var(--text-primary);
-}
-
-.closeBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 24px;
-  block-size: 24px;
-  border: none;
-  border-radius: calc(var(--radius) - 2px);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.1s, color 0.1s;
-  margin-inline-start: 0.25rem;
-}
-
-.closeBtn:hover {
-  background: var(--bg-hover);
   color: var(--text-primary);
 }
 
@@ -179,7 +137,7 @@
 }
 
 .excludeBtn:hover {
-  background: rgba(220, 38, 38, 0.08);
+  background: rgba(242, 73, 92, 0.08);
   border-color: var(--error);
 }
 
@@ -226,15 +184,15 @@
 }
 
 .jsonString {
-  color: #2563eb;
+  color: var(--syntax-string);
 }
 
 .jsonNumber {
-  color: #0d9488;
+  color: var(--syntax-number);
 }
 
 .jsonBool {
-  color: #c4432b;
+  color: var(--syntax-bool);
 }
 
 .jsonNull {

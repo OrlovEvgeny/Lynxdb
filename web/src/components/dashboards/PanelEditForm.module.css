@@ -12,12 +12,11 @@
 .form {
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   padding: var(--space-5);
   width: 500px;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .formTitle {

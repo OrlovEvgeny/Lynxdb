@@ -54,8 +54,6 @@ export function FieldsPanel({
   onFilter,
 }: FieldsPanelProps) {
   const [search, setSearch] = useState("");
-  const [selectedExpanded, setSelectedExpanded] = useState(true);
-  const [availableExpanded, setAvailableExpanded] = useState(true);
   const [popoverField, setPopoverField] = useState<string | null>(null);
   const [popoverAnchor, setPopoverAnchor] = useState<DOMRect | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -162,39 +160,25 @@ export function FieldsPanel({
       />
 
       {/* Selected Fields */}
-      <div class={!selectedExpanded ? styles.sectionCollapsed : undefined}>
-        <button
-          type="button"
-          class={styles.sectionHeader}
-          onClick={() => setSelectedExpanded(!selectedExpanded)}
-        >
-          <span class={styles.sectionChevron}>&#9662;</span>
+      <div>
+        <div class={styles.sectionHeader}>
           Selected Fields ({filteredSelected.length})
-        </button>
-        {selectedExpanded && (
-          filteredSelected.length > 0
-            ? filteredSelected.map((name) => renderFieldRow(name))
-            : <div class={styles.emptyFields}>No selected fields</div>
-        )}
+        </div>
+        {filteredSelected.length > 0
+          ? filteredSelected.map((name) => renderFieldRow(name))
+          : <div class={styles.emptyFields}>No selected fields</div>}
       </div>
 
       <div class={styles.divider} />
 
       {/* Available Fields */}
-      <div class={!availableExpanded ? styles.sectionCollapsed : undefined}>
-        <button
-          type="button"
-          class={styles.sectionHeader}
-          onClick={() => setAvailableExpanded(!availableExpanded)}
-        >
-          <span class={styles.sectionChevron}>&#9662;</span>
+      <div>
+        <div class={styles.sectionHeader}>
           Available Fields ({filteredAvailable.length})
-        </button>
-        {availableExpanded && (
-          filteredAvailable.length > 0
-            ? filteredAvailable.map((f) => renderFieldRow(f.name))
-            : <div class={styles.emptyFields}>No available fields</div>
-        )}
+        </div>
+        {filteredAvailable.length > 0
+          ? filteredAvailable.map((f) => renderFieldRow(f.name))
+          : <div class={styles.emptyFields}>No available fields</div>}
       </div>
 
       {/* Field value popover */}

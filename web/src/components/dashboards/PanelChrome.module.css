@@ -1,13 +1,12 @@
 .chrome {
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 2px;
   overflow: hidden;
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
   height: 100%;
   position: relative;
-  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
 }
 
 .header {
@@ -16,8 +15,8 @@
   justify-content: space-between;
   padding: 6px 10px;
   border-bottom: 1px solid var(--border);
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--text-primary);
   min-height: 32px;
   flex-shrink: 0;
@@ -58,8 +57,7 @@
   top: 24px;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
   z-index: 10;
   min-width: 160px;
   padding: 4px 0;
@@ -97,7 +95,7 @@
 .error {
   padding: var(--space-4);
   color: var(--text-error, #dc2626);
-  background: rgba(220, 38, 38, 0.06);
+  background: rgba(242, 73, 92, 0.06);
   display: flex;
   flex-direction: column;
   align-items: center;

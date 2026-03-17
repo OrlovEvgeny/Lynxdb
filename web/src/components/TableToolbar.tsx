@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "preact/hooks";
-import { Table2, List, WrapText, Download } from "lucide-preact";
+import { Table2, List, Download } from "lucide-preact";
 import styles from "./TableToolbar.module.css";
 
 interface TableToolbarProps {
   viewMode: "table" | "list";
   onViewModeChange: (mode: "table" | "list") => void;
-  wrap: boolean;
-  onWrapChange: (wrap: boolean) => void;
   onExport: (format: "csv" | "json", scope: "page" | "all") => void;
   totalCount: number;
   pageCount: number;
@@ -17,8 +15,6 @@ const fmtNum = (n: number) => new Intl.NumberFormat().format(n);
 export function TableToolbar({
   viewMode,
   onViewModeChange,
-  wrap,
-  onWrapChange,
   onExport,
   totalCount,
   pageCount,
@@ -70,17 +66,6 @@ export function TableToolbar({
             <List size={14} />
           </button>
         </div>
-
-        {/* Wrap toggle */}
-        <button
-          type="button"
-          class={`${styles.iconBtn} ${wrap ? styles.iconBtnActive : ""}`}
-          onClick={() => onWrapChange(!wrap)}
-          title="Toggle text wrap"
-          aria-label="Toggle text wrap"
-        >
-          <WrapText size={14} />
-        </button>
       </div>
 
       <div class={styles.right}>

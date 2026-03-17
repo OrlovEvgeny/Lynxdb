@@ -20,12 +20,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  inline-size: 36px;
-  block-size: 36px;
-  border: 1px solid var(--accent);
+  inline-size: var(--toolbar-height);
+  block-size: var(--toolbar-height);
+  border: none;
   border-radius: var(--radius);
-  background: transparent;
-  color: var(--accent);
+  background: var(--accent);
+  color: #fff;
   font-size: 1rem;
   cursor: pointer;
   flex-shrink: 0;
@@ -33,8 +33,8 @@
 }
 
 .runBtn:hover {
-  background: var(--accent);
-  color: var(--bg-primary);
+  background: var(--accent-hover);
+  color: #fff;
 }
 
 .runBtn:disabled {
@@ -43,18 +43,18 @@
 }
 
 .runBtn:disabled:hover {
-  background: transparent;
-  color: var(--accent);
+  background: var(--accent);
+  color: #fff;
 }
 
 .cancelBtn {
-  border-color: var(--error);
-  color: var(--error);
+  background: var(--error);
+  color: #fff;
 }
 
 .cancelBtn:hover {
-  background: var(--error);
-  color: var(--bg-primary);
+  background: #d93d4e;
+  color: #fff;
 }
 
 /* Main body: sidebar + content side by side */
@@ -101,7 +101,6 @@
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: background-color 0.15s;
   white-space: nowrap;
 }

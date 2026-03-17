@@ -4,7 +4,7 @@
   align-items: center;
   gap: 0.375rem;
   border: 1px solid var(--border);
-  padding: 0.25rem 0.75rem;
+  padding: 0 0.75rem;
   border-radius: var(--radius);
   background: transparent;
   color: var(--text-secondary);
@@ -14,7 +14,7 @@
   flex-shrink: 0;
   transition: background-color 0.15s, border-color 0.15s, color 0.15s;
   white-space: nowrap;
-  block-size: 36px;
+  block-size: var(--toolbar-height);
 }
 
 .button:hover {
@@ -28,13 +28,13 @@
 }
 
 .active {
-  background: rgba(5, 150, 105, 0.1);
+  background: rgba(115, 191, 105, 0.1);
   border-color: var(--success);
   color: var(--success);
 }
 
 .active:hover {
-  background: rgba(5, 150, 105, 0.15);
+  background: rgba(115, 191, 105, 0.15);
   border-color: var(--success);
   color: var(--success);
 }

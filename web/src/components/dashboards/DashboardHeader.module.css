@@ -43,7 +43,7 @@
   padding: 4px 8px;
   border: 1px solid var(--border);
   border-radius: 4px;
-  background: var(--bg-primary);
+  background: var(--input-bg);
   color: var(--text-primary);
   font-size: 0.78rem;
   cursor: pointer;

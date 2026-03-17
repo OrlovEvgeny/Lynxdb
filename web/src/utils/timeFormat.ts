@@ -10,12 +10,18 @@ export interface Preset {
 
 /** Shared preset definitions used by TimeRangePicker and label formatting. */
 export const PRESETS: Preset[] = [
-  { label: "Last 15m", value: "-15m" },
-  { label: "Last 1h", value: "-1h" },
-  { label: "Last 4h", value: "-4h" },
-  { label: "Last 24h", value: "-24h" },
-  { label: "Last 7d", value: "-7d" },
-  { label: "Last 30d", value: "-30d" },
+  { label: "Last 5 minutes", value: "-5m" },
+  { label: "Last 15 minutes", value: "-15m" },
+  { label: "Last 30 minutes", value: "-30m" },
+  { label: "Last 1 hour", value: "-1h" },
+  { label: "Last 3 hours", value: "-3h" },
+  { label: "Last 6 hours", value: "-6h" },
+  { label: "Last 12 hours", value: "-12h" },
+  { label: "Last 24 hours", value: "-24h" },
+  { label: "Last 2 days", value: "-2d" },
+  { label: "Last 7 days", value: "-7d" },
+  { label: "Last 30 days", value: "-30d" },
+  { label: "Last 90 days", value: "-90d" },
 ];
 
 /**
@@ -55,6 +61,44 @@ export function parseRelativeExpression(
 }
 
 /**
+ * Parse a Grafana-style "now-3h" expression into the internal format.
+ *
+ * Examples:
+ *   "now-3h"  -> "-3h"
+ *   "now-30m" -> "-30m"
+ *   "now"     -> undefined (meaning current time)
+ *
+ * Returns null if the expression does not match.
+ */
+export function parseNowExpression(
+  expr: string,
+): string | undefined | null {
+  const trimmed = expr.trim().toLowerCase();
+  if (trimmed === "now") return undefined;
+
+  const match = trimmed.match(/^now\s*-\s*(\d+[smhdw])$/);
+  if (match) return `-${match[1]}`;
+
+  // Try bare relative format: "-3h"
+  if (/^-\d+[smhdw]$/.test(trimmed)) return trimmed;
+
+  return null; // Not a valid now-expression
+}
+
+/**
+ * Convert an internal relative value to Grafana-style display format.
+ *
+ * "-3h"      -> "now-3h"
+ * undefined  -> "now"
+ * ISO string -> as-is
+ */
+export function toNowExpr(value: string | undefined): string {
+  if (value === undefined || value === "now") return "now";
+  if (value.startsWith("-")) return `now${value}`;
+  return value;
+}
+
+/**
  * Convert a relative server value like "-2h" to a human label like "2h ago".
  */
 function relativeToLabel(val: string): string {
@@ -83,7 +127,7 @@ function formatShortDateTime(isoStr: string): string {
 /**
  * Produce a human-readable label for the current time range selection.
  *
- * - Preset match (e.g. "-1h" with no to): "Last 1h"
+ * - Preset match (e.g. "-1h" with no to): "Last 1 hour"
  * - Relative range: "2h ago to 30m ago"
  * - Absolute ISO dates: "Mar 15 14:00 -- Mar 15 16:00"
  */

@@ -95,6 +95,7 @@ export function DashboardDetail({
       {
         column: 12,
         cellHeight: 80,
+        margin: 8,
         disableResize: !editMode,
         disableDrag: !editMode,
         float: true,

@@ -63,39 +63,6 @@
   border-left: 1px solid var(--border);
 }
 
-/* ---- Icon button (wrap toggle) ---- */
-
-.iconBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 22px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: background-color 0.12s, color 0.12s;
-}
-
-.iconBtn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.iconBtnActive {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-
-.iconBtnActive:hover {
-  background: var(--accent-hover);
-  color: #fff;
-  border-color: var(--accent-hover);
-}
-
 /* ---- Export button & dropdown ---- */
 
 .exportWrapper {

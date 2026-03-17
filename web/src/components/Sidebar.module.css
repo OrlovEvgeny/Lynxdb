@@ -8,14 +8,7 @@
   border-inline-end: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  transition: inline-size 200ms ease;
   overflow: hidden;
-}
-
-.sidebar:hover {
-  inline-size: 200px;
-  z-index: var(--z-sidebar-expanded);
-  box-shadow: var(--shadow-lg);
 }
 
 .top {
@@ -65,25 +58,26 @@
   white-space: nowrap;
 }
 
-.sidebar:hover .logoText {
-  opacity: 1;
-}
 
 .navItem {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) 14px;
+  padding-inline-start: 11px;
   border-radius: var(--radius);
+  border-inline-start: 3px solid transparent;
   color: var(--text-secondary);
   text-decoration: none;
   cursor: pointer;
-  border: none;
+  border-top: none;
+  border-bottom: none;
+  border-right: none;
   background: none;
   font-family: var(--font-sans);
   font-size: 0.8125rem;
   white-space: nowrap;
-  transition: background 150ms ease, color 150ms ease;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
   width: 100%;
   text-align: start;
 }
@@ -99,16 +93,13 @@
 }
 
 .navItem.active {
-  background: var(--accent-subtle);
-  color: var(--accent);
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-inline-start-color: var(--accent);
 }
 
 .navLabel {
   opacity: 0;
   transition: opacity 200ms ease;
   white-space: nowrap;
-}
-
-.sidebar:hover .navLabel {
-  opacity: 1;
 }

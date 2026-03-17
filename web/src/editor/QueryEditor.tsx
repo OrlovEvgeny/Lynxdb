@@ -222,7 +222,7 @@ export function QueryEditor({ value, onChange, onExecute, editorRef }: QueryEdit
     const onMove = (moveEvent: PointerEvent) => {
       const deltaY = moveEvent.clientY - startY;
       const maxHeight = window.innerHeight * 0.5; // 50vh cap
-      const newHeight = Math.max(38, Math.min(dragStartHeightRef.current + deltaY, maxHeight));
+      const newHeight = Math.max(32, Math.min(dragStartHeightRef.current + deltaY, maxHeight));
       manualHeightRef.current = newHeight;
       if (wrapRef.current) {
         wrapRef.current.style.height = `${newHeight}px`;
