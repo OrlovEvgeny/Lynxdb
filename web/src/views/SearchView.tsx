@@ -451,15 +451,14 @@ function runQueryAndRefresh(
           },
           (data: unknown) => {
             // onComplete -- parse result
+            // The SSE complete event sends QueryResult directly (not wrapped in {data, meta}).
             if (gen !== queryGeneration) return;
-            const payload = data as { data?: QueryResult; meta?: { took_ms?: number; scanned?: number; query_id?: string; stats?: Record<string, unknown> } };
             batch(() => {
-              result.value = payload.data ?? null;
+              result.value = (data as QueryResult) ?? null;
               stats.value = {
-                took_ms: payload.meta?.took_ms ?? elapsedMs.value,
-                scanned: payload.meta?.scanned ?? 0,
-                query_id: payload.meta?.query_id,
-                stats: payload.meta?.stats,
+                took_ms: elapsedMs.value,
+                scanned: 0,
+                query_id: jobId,
               };
               progressData.value = null;
               queryActive.value = false;
