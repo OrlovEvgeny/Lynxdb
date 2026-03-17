@@ -1,7 +1,7 @@
 .view {
   display: flex;
   flex-direction: column;
-  block-size: 100%;
+  block-size: 100dvh;
   overflow: hidden;
 }
 
