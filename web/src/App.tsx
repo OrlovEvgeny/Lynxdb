@@ -1,6 +1,8 @@
 import Router from "preact-router";
 import { Sidebar } from "./components/Sidebar";
 import { AuthGate } from "./components/AuthGate";
+import { CommandPalette } from "./components/CommandPalette";
+import { HelpOverlay } from "./components/HelpOverlay";
 import { SearchView } from "./views/SearchView";
 import { lazy } from "./utils/lazy";
 import styles from "./App.module.css";
@@ -24,6 +26,8 @@ export function App() {
             <SettingsView path="/settings" />
           </Router>
         </main>
+        <CommandPalette />
+        <HelpOverlay />
       </div>
     </AuthGate>
   );

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "preact/hooks";
-import { signal, batch } from "@preact/signals";
+import { signal, batch, effect } from "@preact/signals";
 import { QueryEditor } from "../editor/QueryEditor";
 import type { QueryEditorHandle } from "../editor/QueryEditor";
 import { TimeRangePicker } from "../components/TimeRangePicker";
@@ -43,6 +43,7 @@ import { appendFilter } from "../utils/filterQuery";
 import {
   paletteOpen,
   helpOverlayOpen,
+  paletteQuery,
   formatShortcut,
   SHORTCUTS,
 } from "../utils/keyboard";
@@ -902,6 +903,23 @@ export function SearchView(_props: Props) {
       helpOverlayOpen.value = !helpOverlayOpen.value;
     },
   });
+
+  // Watch for queries loaded from the command palette
+  useEffect(() => {
+    return effect(() => {
+      const q = paletteQuery.value;
+      if (!q) return;
+      paletteQuery.value = null;
+      query.value = q;
+      // Update editor content
+      const view = getEditorView?.();
+      if (view) {
+        view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: q } });
+      }
+      page.value = 1;
+      runQueryAndRefresh(q, from.value, to.value, 1, pageSize.value);
+    });
+  }, []);
 
   // Capture-phase scroll listener for auto-scroll pause detection.
   // Scroll events do not bubble, so we must capture them on the
