@@ -1,10 +1,13 @@
 import { useEffect, useRef } from "preact/hooks";
+import { paletteOpen, helpOverlayOpen } from "../utils/keyboard";
 
 interface Shortcuts {
   onFocusEditor?: () => void;
   onToggleTail?: () => void;
   onToggleSidebar?: () => void;
   onClosePanel?: () => void;
+  onOpenPalette?: () => void;
+  onOpenHelp?: () => void;
 }
 
 function isInputFocused(): boolean {
@@ -21,10 +24,13 @@ function isInputFocused(): boolean {
 /**
  * Registers global keyboard shortcuts for the search view.
  *
- * - Ctrl/Cmd+K or "/" (when not in an input) -> focus editor
- * - Ctrl/Cmd+L -> toggle live tail
+ * - Ctrl/Cmd+K -> open command palette
+ * - Ctrl/Cmd+L -> focus editor
+ * - Ctrl/Cmd+Shift+T -> toggle live tail
  * - Ctrl/Cmd+Shift+F -> toggle sidebar
- * - Escape -> close panel
+ * - "/" (when not in an input) -> focus editor
+ * - "?" (when not in an input) -> open help overlay
+ * - Escape -> layered close (palette > help overlay > onClosePanel callback)
  */
 export function useKeyboardShortcuts(shortcuts: Shortcuts): void {
   // Use a ref so the effect closure always sees the latest callbacks
@@ -37,22 +43,22 @@ export function useKeyboardShortcuts(shortcuts: Shortcuts): void {
       const s = ref.current;
       const modKey = e.ctrlKey || e.metaKey;
 
-      // Ctrl/Cmd+K -> focus editor
-      if (e.key === "k" && modKey) {
+      // Ctrl/Cmd+K -> open command palette (prevents browser address bar)
+      if (e.key === "k" && modKey && !e.shiftKey) {
+        e.preventDefault();
+        s.onOpenPalette?.();
+        return;
+      }
+
+      // Ctrl/Cmd+L -> focus editor (prevents browser address bar)
+      if (e.key === "l" && modKey && !e.shiftKey) {
         e.preventDefault();
         s.onFocusEditor?.();
         return;
       }
 
-      // "/" when not in an input -> focus editor
-      if (e.key === "/" && !modKey && !e.shiftKey && !isInputFocused()) {
-        e.preventDefault();
-        s.onFocusEditor?.();
-        return;
-      }
-
-      // Ctrl/Cmd+L -> toggle live tail
-      if (e.key === "l" && modKey) {
+      // Ctrl/Cmd+Shift+T -> toggle live tail (prevents browser reopen tab)
+      if (e.key === "T" && modKey && e.shiftKey) {
         e.preventDefault();
         s.onToggleTail?.();
         return;
@@ -65,8 +71,31 @@ export function useKeyboardShortcuts(shortcuts: Shortcuts): void {
         return;
       }
 
-      // Escape -> close panel
+      // "/" when not in an input -> focus editor
+      if (e.key === "/" && !modKey && !e.shiftKey && !isInputFocused()) {
+        e.preventDefault();
+        s.onFocusEditor?.();
+        return;
+      }
+
+      // "?" when not in an input -> open help overlay
+      // Must come after modifier-key shortcuts to avoid conflicts (Pitfall 6)
+      if (e.key === "?" && !modKey && !isInputFocused()) {
+        e.preventDefault();
+        s.onOpenHelp?.();
+        return;
+      }
+
+      // Escape -> layered close: palette > help overlay > app panels
       if (e.key === "Escape") {
+        if (paletteOpen.value) {
+          paletteOpen.value = false;
+          return;
+        }
+        if (helpOverlayOpen.value) {
+          helpOverlayOpen.value = false;
+          return;
+        }
         s.onClosePanel?.();
       }
     }
