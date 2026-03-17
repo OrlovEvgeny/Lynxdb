@@ -30,6 +30,8 @@ var (
 	flagTLSKey       string
 	flagMaxQueryPool string
 	flagSpillDir     string
+	flagNoUI         bool
+	flagOpenUI       bool
 
 	// Cluster flags.
 	flagClusterEnabled  bool
@@ -61,6 +63,8 @@ func init() {
 	serverCmd.Flags().StringVar(&flagTLSKey, "tls-key", "", "Path to TLS private key PEM file")
 	serverCmd.Flags().StringVar(&flagMaxQueryPool, "max-query-pool", "", "Global query memory pool (e.g., 2gb, 4gb)")
 	serverCmd.Flags().StringVar(&flagSpillDir, "spill-dir", "", "Directory for temporary spill files (default: OS temp dir)")
+	serverCmd.Flags().BoolVar(&flagNoUI, "no-ui", false, "Disable embedded Web UI")
+	serverCmd.Flags().BoolVar(&flagOpenUI, "ui", false, "Auto-open Web UI in browser after startup")
 
 	// Cluster flags.
 	serverCmd.Flags().BoolVar(&flagClusterEnabled, "cluster.enabled", false, "Enable cluster mode")
@@ -113,6 +117,11 @@ func runServer(cmd *cobra.Command, args []string) error {
 		cliOverrides = append(cliOverrides, "--cluster.grpc-port")
 	}
 
+	if cmd.Flags().Changed("no-ui") {
+		cfg.NoUI = flagNoUI
+		cliOverrides = append(cliOverrides, "--no-ui")
+	}
+
 	if cmd.Flags().Changed("auth") {
 		cliOverrides = append(cliOverrides, "--auth")
 	}
@@ -159,6 +168,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 		Addr:          cfg.Listen,
 		DataDir:       cfg.DataDir,
 		Retention:     time.Duration(cfg.Retention),
+		NoUI:          cfg.NoUI,
 		KeyStore:      keyStore,
 		TLSConfig:     tlsCfg,
 		Storage:       cfg.Storage,
@@ -217,6 +227,17 @@ func runServer(cmd *cobra.Command, args []string) error {
 		"lynxdb ingest access.log         Ingest a log file",
 		fmt.Sprintf("open %s://%s\t   Web UI", scheme, cfg.Listen),
 	)
+
+	if flagOpenUI {
+		openUIAddr := fmt.Sprintf("%s://%s", scheme, cfg.Listen)
+		go func() {
+			// Brief delay to ensure server is accepting connections.
+			time.Sleep(300 * time.Millisecond)
+			if err := openBrowser(openUIAddr); err != nil {
+				logger.Warn("failed to open browser", "error", err)
+			}
+		}()
+	}
 
 	logAttrs := []any{"version", buildinfo.Version, "addr", cfg.Listen}
 	if cfgPath != "" {

@@ -391,6 +391,12 @@ type HistogramBucket struct {
 	Count int
 }
 
+// GroupedHistogramBucket is a single time bucket with counts broken down by a field value.
+type GroupedHistogramBucket struct {
+	Time   time.Time
+	Counts map[string]int
+}
+
 // FieldValue represents a single field value with count.
 type FieldValue struct {
 	Value   string

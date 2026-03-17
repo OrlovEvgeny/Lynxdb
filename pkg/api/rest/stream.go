@@ -23,6 +23,10 @@ func (s *Server) handleQueryStream(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+	query = substituteVariables(query, req.Variables)
+	if !s.checkQueryLength(w, query) {
+		return
+	}
 
 	start := time.Now()
 

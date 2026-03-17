@@ -126,9 +126,16 @@ type PhysicalPlan struct {
 	JoinStrategy  string `json:"join_strategy,omitempty"`
 }
 
-// PipelineStage describes a single command in the query pipeline.
+// PipelineStage describes a single command in the query pipeline, including
+// per-stage field metadata for the Lynx Flow sidebar.
 type PipelineStage struct {
-	Command string
+	Command       string   // command name (e.g., "stats", "eval", "where")
+	Description   string   // human-readable summary (e.g., "stats count() by host")
+	FieldsAdded   []string // fields this stage creates
+	FieldsRemoved []string // fields this stage removes
+	FieldsOut      []string // complete ordered field set after this stage
+	FieldsOptional []string // fields that may or may not be present
+	FieldsUnknown  bool     // true when full set is unknowable (schema-on-read source stage)
 }
 
 // HistogramRequest is the domain input for histogram generation.
@@ -137,6 +144,7 @@ type HistogramRequest struct {
 	To      string
 	Buckets int
 	Index   string
+	GroupBy string // optional: field to group counts by (e.g. "level")
 }
 
 // HistogramBucket is a single histogram time bucket.
@@ -149,6 +157,19 @@ type HistogramBucket struct {
 type HistogramResult struct {
 	Interval string
 	Buckets  []HistogramBucket
+	Total    int
+}
+
+// GroupedHistogramBucket is a single histogram time bucket with counts broken down by a field value.
+type GroupedHistogramBucket struct {
+	Time   time.Time
+	Counts map[string]int
+}
+
+// GroupedHistogramResult is the domain output for grouped histogram.
+type GroupedHistogramResult struct {
+	Interval string
+	Buckets  []GroupedHistogramBucket
 	Total    int
 }
 
