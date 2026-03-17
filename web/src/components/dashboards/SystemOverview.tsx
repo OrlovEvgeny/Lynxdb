@@ -200,7 +200,7 @@ function StatsStatPanel({
 // ---------------------------------------------------------------------------
 
 export function SystemOverview() {
-  const [from, setFrom] = useState("-1h");
+  const [from, setFrom] = useState(() => localStorage.getItem("lynxdb-dash-timerange") || "-1h");
   const [refreshInterval, setRefreshInterval] = useState(30000);
   const [refreshTick, setRefreshTick] = useState(0);
   const variables: Record<string, string> = {};
@@ -216,6 +216,7 @@ export function SystemOverview() {
 
   const handleTimeChange = useCallback((newFrom: string) => {
     setFrom(newFrom);
+    localStorage.setItem("lynxdb-dash-timerange", newFrom);
     setRefreshTick((t) => t + 1);
   }, []);
 

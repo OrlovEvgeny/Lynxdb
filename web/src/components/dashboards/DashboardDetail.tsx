@@ -29,7 +29,7 @@ export function DashboardDetail({
   const [loading, setLoading] = useState(!!dashboardId);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(initialEditMode ?? false);
-  const [from, setFrom] = useState("-1h");
+  const [from, setFrom] = useState(() => localStorage.getItem("lynxdb-dash-timerange") || "-1h");
   const [refreshInterval, setRefreshInterval] = useState(0);
   const [refreshTick, setRefreshTick] = useState(0);
   const [dashName, setDashName] = useState("");
@@ -186,6 +186,7 @@ export function DashboardDetail({
   // Re-trigger all panels on time change
   const handleTimeChange = useCallback((newFrom: string) => {
     setFrom(newFrom);
+    localStorage.setItem("lynxdb-dash-timerange", newFrom);
     setRefreshTick((t) => t + 1);
   }, []);
 
