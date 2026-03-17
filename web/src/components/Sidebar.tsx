@@ -8,9 +8,11 @@ import {
   LogOut,
   Sun,
   Moon,
+  HelpCircle,
 } from "lucide-preact";
 import { theme, toggleTheme } from "../stores/ui";
 import { token, clearToken } from "../stores/auth";
+import { helpOverlayOpen, paletteOpen } from "../utils/keyboard";
 import styles from "./Sidebar.module.css";
 
 const NAV_ITEMS = [
@@ -64,6 +66,18 @@ export function Sidebar() {
           <span class={styles.navLabel}>
             {theme.value === "dark" ? "Light mode" : "Dark mode"}
           </span>
+        </button>
+        <button
+          type="button"
+          class={styles.navItem}
+          onClick={() => {
+            paletteOpen.value = false;
+            helpOverlayOpen.value = true;
+          }}
+          title="Keyboard shortcuts (?)"
+        >
+          <HelpCircle size={20} />
+          <span class={styles.navLabel}>Shortcuts</span>
         </button>
         {token.value && (
           <button

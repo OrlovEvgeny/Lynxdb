@@ -4,6 +4,7 @@ import type {
   ExplainResult,
   FieldInfo,
 } from "../api/client";
+import { formatShortcut, SHORTCUTS } from "../utils/keyboard";
 import { SourcesPanel } from "./flow/SourcesPanel";
 import { PipelinePanel } from "./flow/PipelinePanel";
 import { FieldsPanel } from "./FieldsPanel";
@@ -43,7 +44,7 @@ export function FlowSidebar({
         class={styles.collapsedToggle}
         onClick={onToggle}
         aria-label="Show flow sidebar"
-        title="Show flow sidebar"
+        title={`Show flow sidebar (${formatShortcut(SHORTCUTS.toggleSidebar)})`}
       >
         &#9656;
       </button>
@@ -59,7 +60,7 @@ export function FlowSidebar({
         class={styles.toggleBtn}
         onClick={onToggle}
         aria-label="Hide flow sidebar"
-        title="Hide flow sidebar"
+        title={`Hide flow sidebar (${formatShortcut(SHORTCUTS.toggleSidebar)})`}
       >
         &#9666;
       </button>

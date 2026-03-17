@@ -40,6 +40,12 @@ import {
   generateFilename,
 } from "../utils/export";
 import { appendFilter } from "../utils/filterQuery";
+import {
+  paletteOpen,
+  helpOverlayOpen,
+  formatShortcut,
+  SHORTCUTS,
+} from "../utils/keyboard";
 import type {
   QueryResult,
   QueryStats,
@@ -881,7 +887,20 @@ export function SearchView(_props: Props) {
     onFocusEditor: () => editorHandleRef.current?.focus(),
     onToggleTail: handleTailToggle,
     onToggleSidebar: () => { sidebarVisible.value = !sidebarVisible.value; },
-    onClosePanel: () => { selectedEvent.value = null; },
+    onClosePanel: () => {
+      // Layered close: event detail > explain inspector > blur editor
+      if (selectedEvent.value) { selectedEvent.value = null; return; }
+      if (explainOpen.value) { explainOpen.value = false; return; }
+      editorHandleRef.current?.getView()?.contentDOM.blur();
+    },
+    onOpenPalette: () => {
+      helpOverlayOpen.value = false; // Close help if open (Pitfall 7)
+      paletteOpen.value = !paletteOpen.value;
+    },
+    onOpenHelp: () => {
+      paletteOpen.value = false; // Close palette if open (Pitfall 7)
+      helpOverlayOpen.value = !helpOverlayOpen.value;
+    },
   });
 
   // Capture-phase scroll listener for auto-scroll pause detection.
@@ -989,7 +1008,9 @@ export function SearchView(_props: Props) {
           onClick={handleExecute}
           disabled={tailActive.value}
           aria-label={queryActive.value ? "Cancel query" : "Run query"}
-          title={queryActive.value ? "Cancel query (Ctrl+Enter)" : "Run query (Ctrl+Enter)"}
+          title={queryActive.value
+            ? `Cancel query (${formatShortcut(SHORTCUTS.runQuery)})`
+            : `Run query (${formatShortcut(SHORTCUTS.runQuery)})`}
         >
           {queryActive.value ? "\u25A0" : "\u25B6"}
         </button>
