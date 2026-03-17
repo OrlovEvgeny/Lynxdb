@@ -56,3 +56,10 @@ export const paletteOpen = signal(false);
 
 /** Signal controlling the help overlay open state. */
 export const helpOverlayOpen = signal(false);
+
+/**
+ * Signal for passing a query from the command palette to SearchView.
+ * When set to a non-null string, SearchView loads it into the editor and executes.
+ * Lives here (not in CommandPalette) to avoid view-imports-from-component anti-pattern.
+ */
+export const paletteQuery = signal<string | null>(null);
