@@ -1,17 +1,36 @@
+import { DashboardList } from "../components/dashboards/DashboardList";
+
 interface Props {
   path?: string;
   rest?: string;
 }
 
-export default function DashboardsView(_props: Props) {
+/** Placeholder for DashboardDetail — will be replaced in Plan 02. */
+function DashboardDetail({
+  dashboardId,
+  editMode,
+}: {
+  dashboardId: string | null;
+  editMode?: boolean;
+}) {
   return (
-    <div style={{ padding: "var(--space-6)", color: "var(--text-secondary)" }}>
-      <h1 style={{ fontSize: "1.25rem", fontWeight: 600, color: "var(--text-primary)" }}>
-        Dashboards
-      </h1>
-      <p style={{ marginTop: "var(--space-2)" }}>
-        Dashboard management will be available in a future update.
-      </p>
+    <div
+      style={{
+        padding: "var(--space-6)",
+        color: "var(--text-secondary)",
+      }}
+    >
+      {editMode
+        ? "Creating new dashboard..."
+        : `Loading dashboard ${dashboardId ?? ""}...`}
     </div>
   );
+}
+
+export default function DashboardsView({ rest }: Props) {
+  if (!rest || rest === "") return <DashboardList />;
+  if (rest === "new")
+    return <DashboardDetail dashboardId={null} editMode={true} />;
+  const parts = rest.split("/");
+  return <DashboardDetail dashboardId={parts[0]} />;
 }

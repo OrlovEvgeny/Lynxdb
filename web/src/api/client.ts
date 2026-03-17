@@ -99,12 +99,14 @@ export async function executeQuery(
   to?: string,
   limit?: number,
   offset?: number,
+  variables?: Record<string, string>,
 ): Promise<QueryResponse> {
   const body: Record<string, unknown> = { q: query };
   if (from) body.from = from;
   if (to) body.to = to;
   if (limit) body.limit = limit;
   if (offset) body.offset = offset;
+  if (variables && Object.keys(variables).length > 0) body.variables = variables;
 
   const resp = await apiFetch(`${BASE}/api/v1/query`, {
     method: "POST",
@@ -343,6 +345,118 @@ export async function fetchViewDetail(name: string): Promise<ViewDetail> {
   if (!resp.ok) throw new Error("Failed to fetch view detail");
   const json: APIResponse<ViewDetail> = await resp.json();
   return json.data;
+}
+
+// ---------------------------------------------------------------------------
+// Dashboards
+// ---------------------------------------------------------------------------
+
+export interface PanelPosition {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface DashboardPanel {
+  id: string;
+  title: string;
+  type: string;
+  q: string;
+  from?: string;
+  position: PanelPosition;
+}
+
+export interface DashboardVariable {
+  name: string;
+  type: "field_values" | "custom";
+  field: string;
+  default?: string;
+  label?: string;
+}
+
+export interface DashboardSummary {
+  id: string;
+  name: string;
+  panels: DashboardPanel[];
+  variables?: DashboardVariable[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DashboardInput {
+  name: string;
+  panels: DashboardPanel[];
+  variables?: DashboardVariable[];
+}
+
+export async function fetchDashboards(): Promise<DashboardSummary[]> {
+  const resp = await apiFetch(`${BASE}/api/v1/dashboards`);
+  if (!resp.ok) throw new Error("Failed to fetch dashboards");
+  const json = await resp.json();
+  // Handle both { data: { dashboards: [...] } } and { data: [...] }
+  const data = json.data;
+  if (Array.isArray(data)) return data;
+  return data.dashboards ?? [];
+}
+
+export async function fetchDashboard(id: string): Promise<DashboardSummary> {
+  const resp = await apiFetch(
+    `${BASE}/api/v1/dashboards/${encodeURIComponent(id)}`,
+  );
+  if (!resp.ok) throw new Error("Failed to fetch dashboard");
+  const json: APIResponse<DashboardSummary> = await resp.json();
+  return json.data;
+}
+
+export async function createDashboard(
+  input: DashboardInput,
+): Promise<DashboardSummary> {
+  const resp = await apiFetch(`${BASE}/api/v1/dashboards`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  if (!resp.ok) {
+    const err = await resp
+      .json()
+      .catch(() => ({ error: { message: resp.statusText } }));
+    throw new Error(
+      err.error?.message || err.data?.error || resp.statusText,
+    );
+  }
+  const json: APIResponse<DashboardSummary> = await resp.json();
+  return json.data;
+}
+
+export async function updateDashboard(
+  id: string,
+  input: DashboardInput,
+): Promise<DashboardSummary> {
+  const resp = await apiFetch(
+    `${BASE}/api/v1/dashboards/${encodeURIComponent(id)}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(input),
+    },
+  );
+  if (!resp.ok) {
+    const err = await resp
+      .json()
+      .catch(() => ({ error: { message: resp.statusText } }));
+    throw new Error(
+      err.error?.message || err.data?.error || resp.statusText,
+    );
+  }
+  const json: APIResponse<DashboardSummary> = await resp.json();
+  return json.data;
+}
+
+export async function deleteDashboard(id: string): Promise<void> {
+  const resp = await apiFetch(
+    `${BASE}/api/v1/dashboards/${encodeURIComponent(id)}`,
+    { method: "DELETE" },
+  );
+  if (!resp.ok) throw new Error("Failed to delete dashboard");
 }
 
 // ---------------------------------------------------------------------------
