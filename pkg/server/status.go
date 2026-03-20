@@ -125,16 +125,19 @@ func (e *Engine) Stats() StatsInfo {
 	var storageBytes int64
 	sourceCounts := make(map[string]int64)
 
-	// Count events from segments.
-	for _, sh := range e.currentEpoch.Load().segments {
+	now := time.Now()
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	var eventsToday int64
+
+	segments := e.currentEpoch.Load().segments
+	for _, sh := range segments {
 		totalEvents += sh.meta.EventCount
 		storageBytes += sh.meta.SizeBytes
 
-		if sh.meta.MinTime.IsZero() {
-			continue
-		}
-		if oldestEvent.IsZero() || sh.meta.MinTime.Before(oldestEvent) {
-			oldestEvent = sh.meta.MinTime
+		if !sh.meta.MinTime.IsZero() {
+			if oldestEvent.IsZero() || sh.meta.MinTime.Before(oldestEvent) {
+				oldestEvent = sh.meta.MinTime
+			}
 		}
 
 		// Count source distribution from segment readers.
@@ -145,16 +148,8 @@ func (e *Engine) Stats() StatsInfo {
 				}
 			}
 		}
-	}
 
-	// No separate buffer to scan — all committed data is in segments.
-
-	now := time.Now()
-	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	var eventsToday int64
-
-	// Count today's events from segments.
-	for _, sh := range e.currentEpoch.Load().segments {
+		// Count today's events.
 		if !sh.meta.MaxTime.Before(todayStart) {
 			if !sh.meta.MinTime.Before(todayStart) {
 				eventsToday += sh.meta.EventCount
@@ -188,7 +183,7 @@ func (e *Engine) Stats() StatsInfo {
 		TotalEvents:    totalEvents,
 		EventsToday:    eventsToday,
 		IndexCount:     len(e.indexes),
-		SegmentCount:   len(e.currentEpoch.Load().segments),
+		SegmentCount:   len(segments),
 		BufferedEvents: e.BufferedEventCount(),
 		Sources:        sources,
 	}
@@ -218,6 +213,33 @@ func (e *Engine) ProjectionCacheStats() *cache.ProjectionCacheStats {
 	s := e.projectionCache.Stats()
 
 	return &s
+}
+
+// AdaptiveControllerStats holds status information from the adaptive
+// compaction controller including GC pressure and pause state.
+type AdaptiveControllerStats struct {
+	CurrentRate   int64   `json:"current_rate_bytes_sec"`
+	Paused        bool    `json:"paused"`
+	PausedReason  string  `json:"paused_reason,omitempty"`
+	GCCPUFraction float64 `json:"gc_cpu_fraction"`
+	P99LatencyMS  float64 `json:"p99_latency_ms"`
+}
+
+// AdaptiveStats returns status from the adaptive compaction controller.
+// Returns nil when the controller is not initialized (in-memory mode).
+func (e *Engine) AdaptiveStats() *AdaptiveControllerStats {
+	if e.adaptiveCtrl == nil {
+		return nil
+	}
+
+	gcFrac, pausedReason := e.adaptiveCtrl.GCStats()
+
+	return &AdaptiveControllerStats{
+		CurrentRate:   e.adaptiveCtrl.Rate(),
+		Paused:        e.adaptiveCtrl.Paused(),
+		PausedReason:  pausedReason,
+		GCCPUFraction: gcFrac,
+	}
 }
 
 // Metrics returns the storage metrics, populating dynamic values first.

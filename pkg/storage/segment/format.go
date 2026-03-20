@@ -3,6 +3,7 @@ package segment
 import (
 	"encoding/binary"
 	"hash/crc32"
+	"sync"
 )
 
 // .lsg file format constants.
@@ -22,6 +23,9 @@ type Footer struct {
 	PrimaryIndexOffset int64
 	PrimaryIndexLength int64
 	Catalog            []CatalogEntry
+
+	cachedStats []ColumnStats // lazy-computed by Stats()
+	statsOnce   sync.Once
 }
 
 // ColumnStats holds aggregated column statistics across all row groups.
@@ -34,10 +38,16 @@ type ColumnStats struct {
 }
 
 // Stats returns aggregated column stats across all row groups.
-// Complexity: O(row_group_count * columns_per_group) with map lookups.
-// This is cold-path only (metadata/status endpoints), not query hot-path.
-// If it becomes a bottleneck, pre-compute during segment write and store in footer.
+// The result is computed once and cached for subsequent calls.
 func (f *Footer) Stats() []ColumnStats {
+	f.statsOnce.Do(func() {
+		f.cachedStats = f.computeStats()
+	})
+	return f.cachedStats
+}
+
+// computeStats aggregates column stats across all row groups.
+func (f *Footer) computeStats() []ColumnStats {
 	if len(f.RowGroups) == 0 {
 		return nil
 	}

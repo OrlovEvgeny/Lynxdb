@@ -43,6 +43,14 @@ func (r *Registry) Add(meta *Meta) {
 	defer r.mu.Unlock()
 
 	r.parts[meta.ID] = meta
+	r.logger.Debug("part registry add",
+		"id", meta.ID,
+		"index", meta.Index,
+		"level", meta.Level,
+		"size", meta.SizeBytes,
+		"events", meta.EventCount,
+		"partition", meta.Partition,
+	)
 	r.byIndex[meta.Index] = insertSorted(r.byIndex[meta.Index], meta)
 	r.byLevel[meta.Level] = append(r.byLevel[meta.Level], meta)
 }
@@ -57,6 +65,11 @@ func (r *Registry) Remove(id string) {
 		return
 	}
 
+	r.logger.Debug("part registry remove",
+		"id", id,
+		"index", meta.Index,
+		"level", meta.Level,
+	)
 	delete(r.parts, id)
 	r.byIndex[meta.Index] = removeByID(r.byIndex[meta.Index], id)
 	r.byLevel[meta.Level] = removeByID(r.byLevel[meta.Level], id)
@@ -177,12 +190,13 @@ func (r *Registry) ScanDir(layout *Layout) error {
 
 				name := entry.Name()
 
-				// Clean up incomplete writes from crash.
-				if IsTempFile(name) {
-					tmpPath := filepath.Join(dir, name)
-					if removeErr := os.Remove(tmpPath); removeErr != nil {
-						r.logger.Warn("part.Registry.ScanDir: failed to remove temp file",
-							"path", tmpPath, "error", removeErr)
+				// Clean up incomplete writes from crash and
+				// .deleted files from prior compaction.
+				if IsTempFile(name) || IsDeletedFile(name) {
+					cleanPath := filepath.Join(dir, name)
+					if removeErr := os.Remove(cleanPath); removeErr != nil {
+						r.logger.Warn("part.Registry.ScanDir: failed to remove stale file",
+							"path", cleanPath, "error", removeErr)
 					} else {
 						tmpCleaned++
 					}
@@ -207,6 +221,11 @@ func (r *Registry) ScanDir(layout *Layout) error {
 				r.Add(meta)
 			}
 		}
+
+		r.logger.Debug("part registry scan index",
+			"index", index,
+			"partitions", len(partitions),
+		)
 	}
 
 	if tmpCleaned > 0 {

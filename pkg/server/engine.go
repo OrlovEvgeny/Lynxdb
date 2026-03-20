@@ -373,6 +373,7 @@ func (e *Engine) Start(ctx context.Context) error {
 	if e.dataDir != "" {
 		// Start deletion pacer for rate-limited file removal.
 		e.deletionPacer = compaction.NewDeletionPacer(0)
+		e.deletionPacer.SetLogger(e.logger)
 		dpCtx, dpCancel := context.WithCancel(ctx)
 		e.deletionPacerCancel = dpCancel
 		go e.deletionPacer.DrainLoop(dpCtx)

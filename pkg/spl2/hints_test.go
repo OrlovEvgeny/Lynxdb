@@ -44,14 +44,41 @@ func TestExtractQueryHints_IndexFromSearch(t *testing.T) {
 }
 
 func TestExtractQueryHints_HeadLimit(t *testing.T) {
+	// head after search: search filters rows, so limit must NOT be pushed to scan.
 	prog, err := ParseProgram(`FROM main | search "error" | head 10`)
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
 
 	hints := ExtractQueryHints(prog)
+	if hints.Limit != 0 {
+		t.Errorf("Limit: got %d, want 0 (search filters rows, pushdown unsafe)", hints.Limit)
+	}
+}
+
+func TestExtractQueryHints_HeadLimitSafePushdown(t *testing.T) {
+	// head after pass-through commands only: limit CAN be pushed to scan.
+	prog, err := ParseProgram(`FROM main | table level, message | head 10`)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+
+	hints := ExtractQueryHints(prog)
 	if hints.Limit != 10 {
-		t.Errorf("Limit: got %d, want 10", hints.Limit)
+		t.Errorf("Limit: got %d, want 10 (only pass-through commands, pushdown safe)", hints.Limit)
+	}
+}
+
+func TestExtractQueryHints_HeadLimitUnsafeWhere(t *testing.T) {
+	// head after where: where filters rows, so limit must NOT be pushed to scan.
+	prog, err := ParseProgram(`FROM main | where level="error" | head 20`)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+
+	hints := ExtractQueryHints(prog)
+	if hints.Limit != 0 {
+		t.Errorf("Limit: got %d, want 0 (where filters rows, pushdown unsafe)", hints.Limit)
 	}
 }
 

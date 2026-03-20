@@ -1,6 +1,9 @@
 package compaction
 
-import "sort"
+import (
+	"log/slog"
+	"sort"
+)
 
 // L0EmergencyThreshold is the L0 segment count that triggers emergency
 // compaction (merge all L0 segments) when no tier-based plans are produced.
@@ -19,6 +22,7 @@ const L0EmergencyThreshold = 8
 // tier-based plans exist, all L0 segments are merged as an emergency measure.
 type SizeTiered struct {
 	Threshold int // min segments per tier to trigger (default 4)
+	Logger    *slog.Logger
 }
 
 // sizeTier boundaries (bytes). Segments fall into the first tier
@@ -57,6 +61,14 @@ func (st *SizeTiered) Plan(segments []*SegmentInfo) []*Plan {
 		}
 	}
 
+	if st.Logger != nil {
+		st.Logger.Debug("size tiered plan",
+			"l0_count", len(l0),
+			"l1_count", len(l1),
+			"threshold", threshold,
+		)
+	}
+
 	if len(l0) < threshold {
 		return nil
 	}
@@ -80,6 +92,12 @@ func (st *SizeTiered) Plan(segments []*SegmentInfo) []*Plan {
 			})
 			trivialIDs[s.Meta.ID] = true
 		}
+	}
+
+	if st.Logger != nil && len(trivialIDs) > 0 {
+		st.Logger.Debug("size tiered trivial moves",
+			"count", len(trivialIDs),
+		)
 	}
 
 	// Filter out trivially-moved segments from the L0 pool.
@@ -125,6 +143,12 @@ func (st *SizeTiered) Plan(segments []*SegmentInfo) []*Plan {
 	// plans were generated, merge ALL remaining L0 segments to prevent
 	// unbounded L0 growth from adversarial size distributions.
 	if len(l0) >= L0EmergencyThreshold && tierPlans == 0 {
+		if st.Logger != nil {
+			st.Logger.Debug("size tiered emergency compaction",
+				"l0_count", len(l0),
+				"emergency_threshold", L0EmergencyThreshold,
+			)
+		}
 		sort.Slice(l0, func(i, j int) bool {
 			return l0[i].Meta.MinTime.Before(l0[j].Meta.MinTime)
 		})

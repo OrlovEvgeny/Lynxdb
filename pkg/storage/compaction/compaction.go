@@ -97,9 +97,9 @@ func NewCompactor(logger *slog.Logger) *Compactor {
 	return &Compactor{
 		segments:   make(map[string]*SegmentInfo),
 		logger:     logger,
-		l0Strategy: &SizeTiered{Threshold: L0CompactionThreshold},
-		l1Strategy: &LevelBased{Threshold: L1CompactionThreshold, TargetSize: L2TargetSize},
-		l2Strategy: &TimeWindow{ColdThreshold: 48 * time.Hour},
+		l0Strategy: &SizeTiered{Threshold: L0CompactionThreshold, Logger: logger},
+		l1Strategy: &LevelBased{Threshold: L1CompactionThreshold, TargetSize: L2TargetSize, Logger: logger},
+		l2Strategy: &TimeWindow{ColdThreshold: 48 * time.Hour, Logger: logger},
 	}
 }
 
@@ -278,6 +278,27 @@ func (c *Compactor) PlanAllCompactions(index string) []*Job {
 		}
 	}
 
+	if len(jobs) > 0 {
+		var l0, l1, l2 int
+		for _, j := range jobs {
+			switch j.Priority {
+			case PriorityL0ToL1:
+				l0++
+			case PriorityL1ToL2, PriorityL1ToL2Hot:
+				l1++
+			case PriorityL2ToL3:
+				l2++
+			}
+		}
+		c.logger.Debug("compaction plans generated",
+			"index", index,
+			"l0_plans", l0,
+			"l1_plans", l1,
+			"l2_plans", l2,
+			"total_jobs", len(jobs),
+		)
+	}
+
 	return jobs
 }
 
@@ -341,13 +362,15 @@ func (c *Compactor) StreamingMerge(ctx context.Context, plan *Plan, writer Merge
 		return nil, ErrNoInputSegments
 	}
 
+	mergeStart := time.Now()
+
 	// Extract optional rate limiter from variadic arg.
 	var rateLimiter *TokenBucket
 	if len(limiter) > 0 {
 		rateLimiter = limiter[0]
 	}
 
-	c.logger.Info("starting compaction merge",
+	c.logger.Debug("starting compaction merge",
 		"input_count", len(plan.InputSegments),
 		"output_level", plan.OutputLevel,
 	)
@@ -369,6 +392,7 @@ func (c *Compactor) StreamingMerge(ctx context.Context, plan *Plan, writer Merge
 	cursors := make(mergeHeap, 0, len(plan.InputSegments))
 
 	for _, seg := range plan.InputSegments {
+		openStart := time.Now()
 		reader, ms, err := c.openSegmentReader(seg)
 		if err != nil {
 			return nil, fmt.Errorf("compaction: open segment %s: %w", seg.Meta.ID, err)
@@ -390,6 +414,12 @@ func (c *Compactor) StreamingMerge(ctx context.Context, plan *Plan, writer Merge
 		if cur.current() != nil {
 			cursors = append(cursors, cur)
 		}
+		c.logger.Debug("segment cursor opened",
+			"id", seg.Meta.ID,
+			"path", seg.Path,
+			"row_groups", reader.RowGroupCount(),
+			"open_ms", time.Since(openStart).Milliseconds(),
+		)
 	}
 
 	heap.Init(&cursors)
@@ -419,6 +449,13 @@ func (c *Compactor) StreamingMerge(ctx context.Context, plan *Plan, writer Merge
 			if totalEvents > 0 {
 				runtime.Gosched()
 			}
+		}
+
+		if totalEvents > 0 && totalEvents%100000 == 0 {
+			c.logger.Debug("streaming merge progress",
+				"events", totalEvents,
+				"elapsed_ms", time.Since(mergeStart).Milliseconds(),
+			)
 		}
 
 		cur := cursors[0]
@@ -481,9 +518,10 @@ func (c *Compactor) StreamingMerge(ctx context.Context, plan *Plan, writer Merge
 		return nil, ErrEmptyMerge
 	}
 
-	c.logger.Info("compaction merge complete",
-		"event_count", totalEvents,
+	c.logger.Debug("streaming merge complete",
+		"events", totalEvents,
 		"output_level", plan.OutputLevel,
+		"duration_ms", time.Since(mergeStart).Milliseconds(),
 	)
 
 	return &StreamingMergeResult{
@@ -511,6 +549,11 @@ func (c *Compactor) openSegmentReader(seg *SegmentInfo) (*segment.Reader, *segme
 		}
 
 		reader := ms.Reader()
+		c.logger.Debug("segment open",
+			"path", seg.Path,
+			"size", seg.Meta.SizeBytes,
+			"advice", "sequential",
+		)
 
 		return reader, ms, nil
 	}

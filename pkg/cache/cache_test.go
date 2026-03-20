@@ -307,6 +307,7 @@ func TestCachePersistenceAcrossRestart(t *testing.T) {
 			Len:     1,
 		}},
 	})
+	cs1.Close() // drain async disk writes before simulating restart
 
 	// Create new cache store (simulates restart)
 	cs2 := NewStore(dir, 1<<20, time.Hour)

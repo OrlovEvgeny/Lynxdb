@@ -1,6 +1,9 @@
 package compaction
 
-import "sort"
+import (
+	"log/slog"
+	"sort"
+)
 
 // LevelBased implements a level-based compaction strategy for L1→L2.
 // It produces non-overlapping, time-partitioned L2 segments, each
@@ -8,6 +11,7 @@ import "sort"
 type LevelBased struct {
 	Threshold  int   // min L1 segments to trigger (default 4)
 	TargetSize int64 // target L2 segment size in bytes (default 1GB)
+	Logger     *slog.Logger
 }
 
 func (lb *LevelBased) Plan(segments []*SegmentInfo) []*Plan {
@@ -22,6 +26,13 @@ func (lb *LevelBased) Plan(segments []*SegmentInfo) []*Plan {
 		if s.Meta.Level == L1 {
 			l1 = append(l1, s)
 		}
+	}
+
+	if lb.Logger != nil {
+		lb.Logger.Debug("level based plan",
+			"l1_count", len(l1),
+			"threshold", threshold,
+		)
 	}
 
 	if len(l1) < threshold {
@@ -63,6 +74,12 @@ func (lb *LevelBased) Plan(segments []*SegmentInfo) []*Plan {
 			InputSegments: append([]*SegmentInfo(nil), group...),
 			OutputLevel:   L2,
 		})
+	}
+
+	if lb.Logger != nil && len(plans) > 0 {
+		lb.Logger.Debug("level based plans formed",
+			"plan_count", len(plans),
+		)
 	}
 
 	return plans

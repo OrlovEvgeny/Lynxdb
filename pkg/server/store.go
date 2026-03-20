@@ -138,11 +138,12 @@ func (s *StreamingServerStore) GetEventIterator(index string) enginepipeline.Ite
 		len(s.baseHints.SourceIndices) > 0 ||
 		s.baseHints.SourceGlob != ""
 	var filteredMem []*event.Event
-	for _, ev := range s.allMemEvents {
-		if isMultiSrc {
-			// Multi-source: already filtered at collection time, include all.
-			filteredMem = append(filteredMem, ev)
-		} else {
+	if isMultiSrc {
+		// Multi-source: already filtered at collection time, use directly.
+		filteredMem = s.allMemEvents
+	} else {
+		filteredMem = make([]*event.Event, 0, len(s.allMemEvents))
+		for _, ev := range s.allMemEvents {
 			idx := ev.Index
 			if idx == "" {
 				idx = DefaultIndexName

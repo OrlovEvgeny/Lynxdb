@@ -166,10 +166,15 @@ func extractQueryHintsFromQuery(q *Query) *QueryHints {
 		h.InPredicates = filtered
 	}
 
-	// Terminal HeadCommand → set Limit hint.
+	// Terminal HeadCommand → set Limit hint only when safe to push down.
+	// Limit pushdown is unsafe when intermediate commands filter rows, aggregate,
+	// reorder, or deduplicate — the scan-level limit would stop reading before
+	// enough rows pass through the pipeline.
 	if len(q.Commands) > 0 {
 		if hc, ok := q.Commands[len(q.Commands)-1].(*HeadCommand); ok {
-			h.Limit = hc.Count
+			if isLimitPushdownSafe(q.Commands[:len(q.Commands)-1]) {
+				h.Limit = hc.Count
+			}
 		}
 	}
 
@@ -200,6 +205,27 @@ func extractQueryHintsFromQuery(q *Query) *QueryHints {
 	mergeAnnotations(q, h)
 
 	return h
+}
+
+// isLimitPushdownSafe returns true if none of the commands can reduce the
+// number of rows or change their order, making it safe to stop the scan
+// after Limit raw rows.
+func isLimitPushdownSafe(cmds []Command) bool {
+	for _, cmd := range cmds {
+		switch cmd.(type) {
+		case *TableCommand, *FieldsCommand, *RenameCommand,
+			*EvalCommand, *FillnullCommand, *RexCommand,
+			*BinCommand, *UnpackCommand:
+			// Pass-through: don't filter or reorder.
+			continue
+		default:
+			// WHERE, SEARCH, SORT, DEDUP, STATS, STREAMSTATS,
+			// EVENTSTATS, TOP, RARE, HEAD, TAIL, JOIN, APPEND,
+			// TRANSACTION, MULTISEARCH, XYSERIES, etc.
+			return false
+		}
+	}
+	return true
 }
 
 // mergeAnnotations reads optimizer-produced annotations and merges them into QueryHints.

@@ -5,6 +5,7 @@ import (
 	crypto_rand "crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,6 +31,7 @@ type Writer struct {
 	rowGroupSize int
 	fsync        bool // whether to fsync before rename (default: true)
 	maxColumns   int  // max user-defined columns per part (0 = unlimited)
+	logger       *slog.Logger
 }
 
 // WriterOption configures optional Writer behavior.
@@ -43,6 +45,14 @@ type WriterOption func(*Writer)
 func WithFSync(enabled bool) WriterOption {
 	return func(w *Writer) {
 		w.fsync = enabled
+	}
+}
+
+// WithLogger sets a structured logger for verbose debug logging of part
+// write operations. When nil (default), no debug logs are emitted.
+func WithLogger(logger *slog.Logger) WriterOption {
+	return func(w *Writer) {
+		w.logger = logger
 	}
 }
 
@@ -89,6 +99,15 @@ func (w *Writer) Write(ctx context.Context, index string, events []*event.Event,
 	}
 
 	now := time.Now()
+
+	if w.logger != nil {
+		w.logger.Debug("part write started",
+			"index", index,
+			"level", level,
+			"events", len(events),
+			"partition", w.layout.PartitionKey(events[0].Time),
+		)
+	}
 
 	// Compute min/max time from events (don't assume sorted).
 	minTime, maxTime := events[0].Time, events[0].Time
@@ -140,16 +159,30 @@ func (w *Writer) Write(ctx context.Context, index string, events []*event.Event,
 		return nil, fmt.Errorf("part.Writer.Write: encode: %w", err)
 	}
 
+	encodeElapsed := time.Since(now)
+
+	// Check context after expensive write — allows graceful cancellation
+	// (e.g., server shutdown) without waiting for fsync + rename.
+	if err := ctx.Err(); err != nil {
+		f.Close()
+		os.Remove(tmpPath)
+
+		return nil, fmt.Errorf("part.Writer.Write: %w", err)
+	}
+
 	// Sync to stable storage before rename (when fsync is enabled).
 	// When fsync is disabled, the OS page cache may buffer writes — faster
 	// but data can be lost on power failure. See WithFSync() for rationale.
+	var fsyncElapsed time.Duration
 	if w.fsync {
+		fsyncStart := time.Now()
 		if err := f.Sync(); err != nil {
 			f.Close()
 			os.Remove(tmpPath)
 
 			return nil, fmt.Errorf("part.Writer.Write: sync: %w", err)
 		}
+		fsyncElapsed = time.Since(fsyncStart)
 	}
 
 	if err := f.Close(); err != nil {
@@ -163,6 +196,19 @@ func (w *Writer) Write(ctx context.Context, index string, events []*event.Event,
 		os.Remove(tmpPath)
 
 		return nil, fmt.Errorf("part.Writer.Write: rename: %w", err)
+	}
+
+	if w.logger != nil {
+		w.logger.Debug("part write complete",
+			"index", index,
+			"level", level,
+			"events", len(events),
+			"path", finalPath,
+			"size", written,
+			"encode_ms", encodeElapsed.Milliseconds(),
+			"fsync_ms", fsyncElapsed.Milliseconds(),
+			"total_ms", time.Since(now).Milliseconds(),
+		)
 	}
 
 	// Extract column names from the written segment.
@@ -217,4 +263,10 @@ func extractColumnNames(events []*event.Event) []string {
 // (incomplete write from a crash).
 func IsTempFile(name string) bool {
 	return strings.HasPrefix(name, "tmp_") && strings.HasSuffix(name, ".lsg")
+}
+
+// IsDeletedFile reports whether the filename is a part file that was
+// renamed to .deleted after compaction but not yet removed from disk.
+func IsDeletedFile(name string) bool {
+	return strings.HasSuffix(name, ".lsg.deleted")
 }

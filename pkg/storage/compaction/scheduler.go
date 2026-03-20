@@ -124,8 +124,16 @@ func (s *Scheduler) SetOnError(fn func(*Job, error)) {
 func (s *Scheduler) Submit(job *Job) {
 	s.mu.Lock()
 	heap.Push(&s.queue, job)
+	queueLen := s.queue.Len()
 	s.jobReady.Signal()
 	s.mu.Unlock()
+
+	s.logger.Debug("compaction job submitted",
+		"index", job.Index,
+		"partition", job.Partition,
+		"priority", job.Priority,
+		"queue_depth", queueLen,
+	)
 }
 
 // SubmitAll adds multiple jobs to the queue.
@@ -136,6 +144,10 @@ func (s *Scheduler) SubmitAll(jobs []*Job) {
 	}
 	if len(jobs) > 0 {
 		s.jobReady.Broadcast()
+		s.logger.Debug("compaction jobs batch submitted",
+			"count", len(jobs),
+			"queue_depth", s.queue.Len(),
+		)
 	}
 	s.mu.Unlock()
 }
@@ -213,6 +225,13 @@ func (s *Scheduler) worker(ctx context.Context, id int) {
 		adaptiveCtrl := s.adaptiveCtrl
 		onComplete := s.onComplete
 		onError := s.onError
+		s.logger.Debug("compaction worker dequeue",
+			"worker", id,
+			"index", job.Index,
+			"partition", job.Partition,
+			"priority", job.Priority,
+			"input_count", len(job.Plan.InputSegments),
+		)
 		s.mu.Unlock()
 
 		// Check if compaction is paused by adaptive controller (C2).
@@ -222,6 +241,11 @@ func (s *Scheduler) worker(ctx context.Context, id int) {
 			heap.Push(&s.queue, job)
 			delete(s.activeKeys, key)
 			s.jobReady.Signal()
+			s.logger.Debug("compaction paused, requeueing",
+				"index", job.Index,
+				"partition", job.Partition,
+				"reason", adaptiveCtrl.PausedReason(),
+			)
 			s.mu.Unlock()
 
 			select {
@@ -237,6 +261,9 @@ func (s *Scheduler) worker(ctx context.Context, id int) {
 		// to GOMAXPROCS/2 to avoid starving query goroutines.
 		select {
 		case s.cpuSem <- struct{}{}:
+			s.logger.Debug("compaction cpu semaphore acquired",
+				"worker", id,
+			)
 		case <-ctx.Done():
 			// Context canceled — release the key and exit.
 			s.mu.Lock()
@@ -255,6 +282,7 @@ func (s *Scheduler) worker(ctx context.Context, id int) {
 		// Execute compaction: use custom executor if set, otherwise default.
 		var output *SegmentInfo
 		var err error
+		execStart := time.Now()
 		if executor != nil {
 			err = executor(ctx, job)
 		} else {
@@ -263,6 +291,14 @@ func (s *Scheduler) worker(ctx context.Context, id int) {
 
 		// Release CPU semaphore.
 		<-s.cpuSem
+
+		s.logger.Debug("compaction job complete",
+			"worker", id,
+			"index", job.Index,
+			"partition", job.Partition,
+			"duration_ms", time.Since(execStart).Milliseconds(),
+			"error", err,
+		)
 
 		if err != nil {
 			s.logger.Error("compaction job failed",
@@ -314,6 +350,11 @@ func (s *Scheduler) popAvailableJob() *Job {
 			return candidate
 		}
 		deferred = append(deferred, candidate)
+		s.logger.Debug("compaction job deferred",
+			"index", candidate.Index,
+			"partition", candidate.Partition,
+			"reason", "active_key",
+		)
 	}
 
 	// All jobs were blocked. Re-push them all.

@@ -111,6 +111,7 @@ func (e *Engine) initDiskPersistence(ctx context.Context) error {
 	}
 	var writerOpts []part.WriterOption
 	writerOpts = append(writerOpts, part.WithFSync(fsyncEnabled))
+	writerOpts = append(writerOpts, part.WithLogger(e.logger))
 	if e.storageCfg.MaxColumnsPerPart > 0 {
 		writerOpts = append(writerOpts, part.WithMaxColumns(e.storageCfg.MaxColumnsPerPart))
 	}

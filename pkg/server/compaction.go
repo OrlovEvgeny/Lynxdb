@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"os"
 	"sync"
 	"time"
 
@@ -52,7 +53,9 @@ func (e *Engine) startCompaction(ctx context.Context) {
 	}
 
 	// Create adaptive controller for latency-based throttling.
-	e.adaptiveCtrl = compaction.NewAdaptiveController(compaction.AdaptiveConfig{})
+	e.adaptiveCtrl = compaction.NewAdaptiveController(compaction.AdaptiveConfig{
+		Logger: e.logger,
+	})
 
 	// Wire query completion callback to feed latency samples.
 	prevOnQueryComplete := e.onQueryComplete
@@ -81,6 +84,12 @@ func (e *Engine) startCompaction(ctx context.Context) {
 	})
 
 	e.compactionSched.Start(ctx)
+
+	e.logger.Debug("compaction scheduler started",
+		"interval", interval,
+		"workers", 2,
+		"rate_bytes_per_sec", e.adaptiveCtrl.Rate(),
+	)
 
 	// Plan-submission goroutine: scans all indexes, produces jobs, submits to scheduler.
 	go func() {
@@ -120,6 +129,11 @@ func (e *Engine) submitCompactionJobs() {
 		}
 	}
 
+	e.logger.Debug("compaction scan complete",
+		"indexes_scanned", len(indexNames),
+		"queue_depth", e.compactionSched.QueueLen(),
+	)
+
 	// Update queue depth metric.
 	e.metrics.CompactionQueueDepth.Store(int64(e.compactionSched.QueueLen()))
 }
@@ -133,6 +147,15 @@ func (e *Engine) submitCompactionJobs() {
 // collected in memory because part.Writer.Write expects a full event slice;
 // true streaming-to-disk requires changes to part.Writer (future refactor).
 func (e *Engine) executeCompactionPlan(ctx context.Context, idx, partition string, plan *compaction.Plan) {
+	planStart := time.Now()
+	e.logger.Debug("compaction plan execution started",
+		"index", idx,
+		"partition", partition,
+		"input_count", len(plan.InputSegments),
+		"output_level", plan.OutputLevel,
+		"trivial_move", plan.TrivialMove,
+	)
+
 	// Handle trivial moves: promote the segment's level without merge.
 	if plan.TrivialMove && len(plan.InputSegments) == 1 {
 		e.executeTrivialMove(ctx, idx, partition, plan)
@@ -147,7 +170,12 @@ func (e *Engine) executeCompactionPlan(ctx context.Context, idx, partition strin
 	if e.compactionSched != nil {
 		rateLimiter = e.compactionSched.Limiter()
 	}
-	var allEvents []*event.Event
+	// Pre-allocate from input segment event counts to avoid repeated slice growth.
+	var estimatedEvents int64
+	for _, seg := range plan.InputSegments {
+		estimatedEvents += seg.Meta.EventCount
+	}
+	allEvents := make([]*event.Event, 0, estimatedEvents)
 	result, err := e.compactor.StreamingMerge(ctx, plan, compaction.MergeWriterFunc(func(batch []*event.Event) error {
 		allEvents = append(allEvents, batch...)
 		return nil
@@ -166,6 +194,14 @@ func (e *Engine) executeCompactionPlan(ctx context.Context, idx, partition strin
 	}
 
 	e.metrics.CompactionRuns.Add(1)
+
+	mergeElapsed := time.Since(planStart)
+	e.logger.Debug("compaction merge phase complete",
+		"index", idx,
+		"partition", partition,
+		"events", len(allEvents),
+		"merge_ms", mergeElapsed.Milliseconds(),
+	)
 
 	// Write merged events to disk via part.Writer (atomic tmp_ → rename).
 	outputMeta, err := e.partWriter.Write(ctx, idx, allEvents, result.Level)
@@ -187,6 +223,12 @@ func (e *Engine) executeCompactionPlan(ctx context.Context, idx, partition strin
 
 	// Register the new part in the part registry.
 	e.partRegistry.Add(outputMeta)
+
+	e.logger.Debug("compaction output registered",
+		"id", outputMeta.ID,
+		"level", outputMeta.Level,
+		"size", outputMeta.SizeBytes,
+	)
 
 	// Load the new part as a query-visible segment handle.
 	if err := e.loadPartAsSegment(outputMeta); err != nil {
@@ -220,11 +262,21 @@ func (e *Engine) executeCompactionPlan(ctx context.Context, idx, partition strin
 	// Remove old segments from subsystems and defer file deletion until
 	// mmap close (refs reaches 0). This prevents SIGSEGV on macOS arm64
 	// where the kernel can revoke page protections for unlinked mappings.
+	//
+	// Rename each old part to .deleted so ScanDir won't reload it on restart.
+	// os.Rename is safe with mmap on POSIX (modifies directory entry, not inode).
 	for _, old := range oldHandles {
 		e.compactor.RemoveSegment(old.meta.ID)
 		e.tierMgr.RemoveSegment(old.meta.ID)
 		if old.meta.Path != "" {
-			old.pendingDelete = []string{old.meta.Path}
+			deletedPath := old.meta.Path + ".deleted"
+			if err := os.Rename(old.meta.Path, deletedPath); err != nil {
+				e.logger.Warn("compaction: rename to .deleted failed, deferring",
+					"path", old.meta.Path, "error", err)
+				old.pendingDelete = []string{old.meta.Path}
+			} else {
+				old.pendingDelete = []string{deletedPath}
+			}
 		}
 		if e.deletionPacer != nil {
 			old.deleteFunc = e.deletionPacer.Enqueue
@@ -234,6 +286,11 @@ func (e *Engine) executeCompactionPlan(ctx context.Context, idx, partition strin
 	e.advanceEpoch(newSegments, oldHandles) // schedules background mmap cleanup
 	e.mu.Unlock()
 
+	e.logger.Debug("compaction epoch advanced",
+		"removed", len(oldHandles),
+		"added", 1,
+	)
+
 	// Cache invalidation and registry cleanup (outside lock).
 	removedIDs := make([]string, 0, len(oldHandles))
 	for _, old := range oldHandles {
@@ -241,6 +298,11 @@ func (e *Engine) executeCompactionPlan(ctx context.Context, idx, partition strin
 	}
 
 	e.cache.OnCompaction(removedIDs, []string{outputMeta.ID})
+
+	e.logger.Debug("compaction cache invalidation",
+		"removed_entries", len(removedIDs),
+		"added_id", outputMeta.ID,
+	)
 
 	// Invalidate projection cache entries for compacted-away segments.
 	if e.projectionCache != nil {
@@ -351,6 +413,14 @@ func (e *Engine) maybeCompactAfterFlush(_ context.Context, index, partition stri
 	}
 
 	l0Count := len(e.compactor.SegmentsByLevelPartition(index, partition, 0))
+
+	e.logger.Debug("reactive compaction check",
+		"index", index,
+		"partition", partition,
+		"l0_count", l0Count,
+		"threshold", compaction.L0CompactionThreshold,
+	)
+
 	if l0Count < compaction.L0CompactionThreshold {
 		return
 	}
@@ -386,6 +456,11 @@ func (e *Engine) onPartitionDeleted(removedIDs []string, partitionDir string) {
 		return
 	}
 
+	e.logger.Debug("partition deletion started",
+		"removed_ids", len(removedIDs),
+		"partition_dir", partitionDir,
+	)
+
 	removeSet := make(map[string]bool, len(removedIDs))
 	for _, id := range removedIDs {
 		removeSet[id] = true
@@ -404,15 +479,27 @@ func (e *Engine) onPartitionDeleted(removedIDs []string, partitionDir string) {
 	}
 
 	// Remove from subsystems and defer file deletion until mmap close.
+	// Rename to .deleted so ScanDir won't reload on restart.
 	for _, old := range oldHandles {
 		e.compactor.RemoveSegment(old.meta.ID)
 		e.tierMgr.RemoveSegment(old.meta.ID)
 		if old.meta.Path != "" {
-			old.pendingDelete = []string{old.meta.Path}
+			deletedPath := old.meta.Path + ".deleted"
+			if err := os.Rename(old.meta.Path, deletedPath); err != nil {
+				e.logger.Warn("retention: rename to .deleted failed, deferring",
+					"path", old.meta.Path, "error", err)
+				old.pendingDelete = []string{old.meta.Path}
+			} else {
+				old.pendingDelete = []string{deletedPath}
+			}
 		}
 		if e.deletionPacer != nil {
 			old.deleteFunc = e.deletionPacer.Enqueue
 		}
+		e.logger.Debug("retention: segment marked for deletion",
+			"id", old.meta.ID,
+			"path", old.meta.Path,
+		)
 	}
 
 	e.advanceEpoch(newSegments, oldHandles) // schedules background mmap cleanup

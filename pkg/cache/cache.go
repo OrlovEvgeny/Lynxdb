@@ -2,9 +2,8 @@ package cache
 
 import (
 	"context"
-	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 	"hash/fnv"
 	"log/slog"
 	"os"
@@ -47,12 +46,20 @@ type Key struct {
 
 // Bytes returns deterministic serialization for the cache key.
 func (k Key) Bytes() []byte {
-	s := fmt.Sprintf("%s|%s|%08x|%016x|%d-%d",
-		k.IndexName, k.SegmentID, k.SegmentCRC32, k.QueryHash,
-		k.TimeRange[0], k.TimeRange[1])
-	h := sha256.Sum256([]byte(s))
-
-	return h[:]
+	h := fnv.New128a()
+	h.Write([]byte(k.IndexName))
+	h.Write([]byte{0})
+	h.Write([]byte(k.SegmentID))
+	h.Write([]byte{0})
+	var buf [12]byte
+	binary.BigEndian.PutUint32(buf[0:4], k.SegmentCRC32)
+	binary.BigEndian.PutUint64(buf[4:12], k.QueryHash)
+	h.Write(buf[:])
+	var tbuf [16]byte
+	binary.BigEndian.PutUint64(tbuf[0:8], uint64(k.TimeRange[0]))
+	binary.BigEndian.PutUint64(tbuf[8:16], uint64(k.TimeRange[1]))
+	h.Write(tbuf[:])
+	return h.Sum(nil)
 }
 
 // Hex returns the hex string of the key hash (for filenames).
@@ -110,6 +117,12 @@ type PoolReserver interface {
 	ReleaseCache(n int64)
 }
 
+// diskOp represents an async disk operation (write or remove).
+type diskOp struct {
+	hex    string
+	result *CachedResult // nil = remove, non-nil = write
+}
+
 // Store is an in-memory + optional filesystem cache with CLOCK eviction.
 type Store struct {
 	mu          sync.RWMutex
@@ -126,6 +139,9 @@ type Store struct {
 	// Observability counters for cache pressure and disk errors.
 	poolFullDrops atomic.Int64 // inserts dropped because governor pool was full
 	removeErrors  atomic.Int64 // os.Remove failures during eviction
+
+	diskOps chan diskOp    // async disk write/remove queue
+	diskWg  sync.WaitGroup // tracks background disk goroutine
 
 	// pool is the optional memory pool. When non-nil, cache
 	// insertions call ReserveForCache and evictions call ReleaseCache.
@@ -155,6 +171,9 @@ func NewStore(dir string, maxBytes int64, ttl time.Duration) *Store {
 		maxBytes: maxBytes,
 		ttl:      ttl,
 	}
+	cs.diskOps = make(chan diskOp, 4096)
+	cs.diskWg.Add(1)
+	go cs.diskWorker()
 	if dir != "" {
 		cs.loadFromDisk()
 	}
@@ -463,31 +482,57 @@ func (cs *Store) diskPath(hex string) string {
 	return filepath.Join(cs.dir, prefix, hex)
 }
 
-// removeDiskEntry removes the cached file from disk. Logs and counts
-// errors (except ENOENT, which is expected during concurrent eviction).
+// removeDiskEntry enqueues an async disk removal for the given cache entry.
 func (cs *Store) removeDiskEntry(hex string) {
-	if err := os.Remove(cs.diskPath(hex)); err != nil && !os.IsNotExist(err) {
-		cs.removeErrors.Add(1)
-		slog.Warn("cache: failed to remove evicted entry",
-			"path", cs.diskPath(hex), "error", err)
+	select {
+	case cs.diskOps <- diskOp{hex: hex}:
+	default:
 	}
 }
 
 func (cs *Store) writeToDisk(hex string, result *CachedResult) {
-	path := cs.diskPath(hex)
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		slog.Debug("cache: mkdir failed", "path", filepath.Dir(path), "error", err)
-
-		return
+	select {
+	case cs.diskOps <- diskOp{hex: hex, result: result}:
+	default:
+		// Channel full — drop the disk persistence (in-memory cache still valid).
 	}
-	data, err := msgpack.Marshal(result)
-	if err != nil {
-		slog.Debug("cache: marshal failed", "error", err)
+}
 
-		return
+// diskWorker processes async disk writes and removes in the background.
+func (cs *Store) diskWorker() {
+	defer cs.diskWg.Done()
+	// Pre-created dirs cache to avoid redundant MkdirAll calls.
+	knownDirs := make(map[string]struct{})
+	for op := range cs.diskOps {
+		path := cs.diskPath(op.hex)
+		if op.result == nil {
+			// Remove.
+			if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+				cs.removeErrors.Add(1)
+			}
+		} else {
+			// Write.
+			dir := filepath.Dir(path)
+			if _, ok := knownDirs[dir]; !ok {
+				if err := os.MkdirAll(dir, 0o755); err != nil {
+					continue
+				}
+				knownDirs[dir] = struct{}{}
+			}
+			data, err := msgpack.Marshal(op.result)
+			if err != nil {
+				continue
+			}
+			_ = os.WriteFile(path, data, 0o600)
+		}
 	}
-	if err := os.WriteFile(path, data, 0o600); err != nil {
-		slog.Debug("cache: write failed", "path", path, "error", err)
+}
+
+// Close shuts down the background disk worker and waits for pending ops.
+func (cs *Store) Close() {
+	if cs.diskOps != nil {
+		close(cs.diskOps)
+		cs.diskWg.Wait()
 	}
 }
 

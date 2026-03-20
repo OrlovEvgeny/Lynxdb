@@ -159,10 +159,10 @@ func (fc *FieldCatalog) AddEvents(events []*event.Event) {
 // addTopValue tracks a value in the top-values sample for a field accumulator.
 // Caps at 1000 unique values to avoid unbounded memory growth.
 func (fc *FieldCatalog) addTopValue(a *fieldAccum, str string) {
-	if len(a.values) < 1000 {
-		a.values[str]++
-	} else if _, ok := a.values[str]; ok {
-		a.values[str]++
+	if n, ok := a.values[str]; ok {
+		a.values[str] = n + 1
+	} else if len(a.values) < 1000 {
+		a.values[str] = 1
 	}
 }
 

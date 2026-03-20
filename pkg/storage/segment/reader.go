@@ -29,6 +29,7 @@ type Reader struct {
 	footer       *Footer
 	columnIndex  map[string]int                        // catalog name → index (built once on open)
 	perColBlooms map[int]map[string]*index.BloomFilter // lazily populated: rgIdx → colName → bloom
+	statsIndex   map[string]int                        // lazily built: column name → index in Stats()
 
 	// Optional column cache for decoded column data. When set, column read
 	// methods check the cache before decompressing and store results after.
@@ -247,12 +248,15 @@ func (r *Reader) ColumnChunkInRowGroup(rgIdx int, name string) *ColumnChunkMeta 
 // StatsByName returns column statistics for the named column, or nil if not found.
 func (r *Reader) StatsByName(name string) *ColumnStats {
 	stats := r.footer.Stats()
-	for i := range stats {
-		if stats[i].Name == name {
-			return &stats[i]
+	if r.statsIndex == nil {
+		r.statsIndex = make(map[string]int, len(stats))
+		for i := range stats {
+			r.statsIndex[stats[i].Name] = i
 		}
 	}
-
+	if idx, ok := r.statsIndex[name]; ok {
+		return &stats[idx]
+	}
 	return nil
 }
 

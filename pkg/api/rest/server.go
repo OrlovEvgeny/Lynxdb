@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -212,6 +213,13 @@ func NewServer(cfg Config) (*Server, error) {
 
 	// Prometheus metrics endpoint (standard /metrics path).
 	mux.Handle("GET /metrics", promMetrics.Handler())
+
+	// pprof debug endpoints for live CPU/memory profiling.
+	mux.HandleFunc("GET /debug/pprof/", pprof.Index)
+	mux.HandleFunc("GET /debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("GET /debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("GET /debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("GET /debug/pprof/trace", pprof.Trace)
 
 	// Query endpoint (three-mode: sync/hybrid/async).
 	mux.HandleFunc("POST /api/v1/query", s.handleQuery)

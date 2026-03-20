@@ -196,6 +196,16 @@ func (b *AsyncBatcher) Add(events []*event.Event) error {
 
 		// Check thresholds.
 		if len(shard.events) >= b.cfg.MaxEvents || shard.sizeBytes >= b.cfg.MaxBytes {
+			trigger := "MaxEvents"
+			if shard.sizeBytes >= b.cfg.MaxBytes {
+				trigger = "MaxBytes"
+			}
+			b.logger.Debug("batcher threshold crossed",
+				"index", idx,
+				"trigger", trigger,
+				"events", len(shard.events),
+				"size_bytes", shard.sizeBytes,
+			)
 			// Snapshot and clear shard under lock; flush happens below without lock.
 			toFlush = append(toFlush, flushTarget{
 				index:  idx,
@@ -225,6 +235,12 @@ func (b *AsyncBatcher) Add(events []*event.Event) error {
 //   - At or above RejectThreshold: return ErrTooManyParts immediately.
 func (b *AsyncBatcher) checkBackpressure() error {
 	partCount := b.registry.Count()
+
+	b.logger.Debug("backpressure check",
+		"part_count", partCount,
+		"delay_threshold", b.cfg.DelayThreshold,
+		"reject_threshold", b.cfg.RejectThreshold,
+	)
 
 	if partCount >= b.cfg.RejectThreshold {
 		b.logger.Warn("backpressure: rejecting ingest",
@@ -369,6 +385,12 @@ func (b *AsyncBatcher) flushIdleShards() {
 	}
 	b.mu.Unlock()
 
+	if len(toFlush) > 0 {
+		b.logger.Debug("idle shards detected",
+			"count", len(toFlush),
+		)
+	}
+
 	for _, ft := range toFlush {
 		if err := b.flushEvents(ft.index, ft.events); err != nil {
 			b.logger.Error("idle flush failed", "index", ft.index,
@@ -388,6 +410,7 @@ func (b *AsyncBatcher) flushEvents(index string, events []*event.Event) error {
 	// cluster into the same row groups, improving dictionary encoding
 	// and constColumn detection (e.g., a row group where all events
 	// have source="nginx" stores the value once, not per-row).
+	sortStart := time.Now()
 	sort.SliceStable(events, func(i, j int) bool {
 		if events[i].Time.Equal(events[j].Time) {
 			return events[i].Source < events[j].Source
@@ -395,6 +418,13 @@ func (b *AsyncBatcher) flushEvents(index string, events []*event.Event) error {
 
 		return events[i].Time.Before(events[j].Time)
 	})
+	sortElapsed := time.Since(sortStart)
+
+	b.logger.Debug("flush started",
+		"index", index,
+		"events", len(events),
+		"sort_ms", sortElapsed.Milliseconds(),
+	)
 
 	meta, err := b.writer.Write(context.Background(), index, events, 0)
 	if err != nil {

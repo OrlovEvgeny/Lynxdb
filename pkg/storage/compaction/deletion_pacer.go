@@ -2,6 +2,7 @@ package compaction
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -27,6 +28,7 @@ type DeletionPacer struct {
 	mu      sync.Mutex
 	pending []pendingDelete
 	notify  chan struct{} // poked on enqueue to wake drainer
+	logger  *slog.Logger
 }
 
 // NewDeletionPacer creates a pacer with the given deletion rate in bytes/sec.
@@ -41,11 +43,23 @@ func NewDeletionPacer(rateBytesPerSec int64) *DeletionPacer {
 	}
 }
 
+// SetLogger sets the logger for the deletion pacer.
+func (p *DeletionPacer) SetLogger(logger *slog.Logger) {
+	p.logger = logger
+}
+
 // Enqueue schedules a file for rate-limited deletion.
 func (p *DeletionPacer) Enqueue(path string, sizeBytes int64) {
 	p.mu.Lock()
 	p.pending = append(p.pending, pendingDelete{path: path, sizeBytes: sizeBytes})
 	p.mu.Unlock()
+
+	if p.logger != nil {
+		p.logger.Debug("deletion pacer enqueue",
+			"path", path,
+			"size", sizeBytes,
+		)
+	}
 
 	// Non-blocking poke.
 	select {
@@ -105,6 +119,13 @@ func (p *DeletionPacer) drainBudget(budget int64) {
 	for _, pd := range toDelete {
 		deleteFileAndDir(pd.path)
 	}
+
+	if p.logger != nil && len(toDelete) > 0 {
+		p.logger.Debug("deletion pacer drain",
+			"files_deleted", len(toDelete),
+			"bytes_deleted", remaining,
+		)
+	}
 }
 
 // flushAll deletes all remaining files without rate limiting.
@@ -116,6 +137,12 @@ func (p *DeletionPacer) flushAll() {
 
 	for _, pd := range remaining {
 		deleteFileAndDir(pd.path)
+	}
+
+	if p.logger != nil && len(remaining) > 0 {
+		p.logger.Debug("deletion pacer flush all",
+			"files_flushed", len(remaining),
+		)
 	}
 }
 
