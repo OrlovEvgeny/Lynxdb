@@ -166,6 +166,12 @@ func newTestAdaptiveController(cfg AdaptiveConfig, gcFractionFn func() float64) 
 	if ac.gcMonitor != nil && gcFractionFn != nil {
 		ac.gcMonitor.sampleFn = func(stats *debug.GCStats) {
 			// Simulate GC pressure by advancing PauseTotal proportionally.
+			// Reset prevSampleTime to a fixed offset so that wall time in
+			// Sample() is ~1s regardless of scheduling jitter. Without this,
+			// the time gap between sampleFn's time.Since() and Sample()'s
+			// time.Now() can be 20x+ the actual elapsed time on macOS,
+			// causing gcFrac to be wildly incorrect.
+			ac.gcMonitor.prevSampleTime = time.Now().Add(-1 * time.Second)
 			frac := gcFractionFn()
 			elapsed := time.Since(ac.gcMonitor.prevSampleTime)
 			gcPause := time.Duration(float64(elapsed) * frac)
@@ -401,6 +407,8 @@ func TestGCMonitor_Sample(t *testing.T) {
 	callCount := 0
 	m.sampleFn = func(stats *debug.GCStats) {
 		callCount++
+		// Reset prevSampleTime so wall time in Sample() is ~1s.
+		m.prevSampleTime = time.Now().Add(-1 * time.Second)
 		// Simulate 10ms of GC pause added each call.
 		stats.PauseTotal = m.prevPauseTotal + 10*time.Millisecond
 	}

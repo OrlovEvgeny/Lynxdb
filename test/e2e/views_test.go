@@ -58,7 +58,10 @@ func TestE2E_Views_CRUD(t *testing.T) {
 		t.Fatalf("PatchView: %v", err)
 	}
 	if patched.Retention != "720h" {
-		t.Logf("PatchView retention: got %q (may not reflect immediately)", patched.Retention)
+		// BUG: PatchView returns empty retention instead of "720h".
+		// The server may not be persisting or returning the patched retention field.
+		// The application code must be fixed — do not weaken this assertion.
+		t.Errorf("PatchView retention: got %q, want %q", patched.Retention, "720h")
 	}
 
 	// Delete.
@@ -72,7 +75,7 @@ func TestE2E_Views_CRUD(t *testing.T) {
 	if err == nil {
 		t.Error("expected error after deleting view, got nil")
 	} else if !client.IsNotFound(err) {
-		t.Logf("GetView after delete returned: %v (expected NotFound)", err)
+		t.Errorf("GetView after delete: expected NotFound, got %v", err)
 	}
 }
 
@@ -98,7 +101,7 @@ func TestE2E_Views_CreateDuplicate_ReturnsAlreadyExists(t *testing.T) {
 		t.Fatal("expected error for duplicate view, got nil")
 	}
 	if !client.IsAlreadyExists(err) {
-		t.Logf("duplicate create returned: %v (expected AlreadyExists)", err)
+		t.Errorf("duplicate create: expected AlreadyExists, got %v", err)
 	}
 }
 
@@ -111,6 +114,6 @@ func TestE2E_Views_DeleteNonexistent_ReturnsNotFound(t *testing.T) {
 		t.Fatal("expected error deleting nonexistent view, got nil")
 	}
 	if !client.IsNotFound(err) {
-		t.Logf("delete nonexistent returned: %v (expected NotFound)", err)
+		t.Errorf("delete nonexistent: expected NotFound, got %v", err)
 	}
 }

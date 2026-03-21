@@ -61,6 +61,17 @@ func healthCheck(url string) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
+// requireCluster skips the test if the Docker cluster is not running.
+func requireCluster(t *testing.T) {
+	t.Helper()
+	for _, url := range nodeURLs {
+		if healthCheck(url) {
+			return // at least one node is reachable
+		}
+	}
+	t.Skip("Docker cluster not running; start with: docker compose -f test/chaos/docker-compose.yml up --build -d")
+}
+
 // waitForHealth waits for a node to become healthy.
 func waitForHealth(t *testing.T, url string, timeout time.Duration) {
 	t.Helper()
@@ -93,6 +104,8 @@ func ingestEvent(url string, payload string) error {
 // TestChaos_LeaderKill_ShardMapConverges kills the meta leader and verifies
 // a new leader is elected and the shard map converges within 30 seconds.
 func TestChaos_LeaderKill_ShardMapConverges(t *testing.T) {
+	requireCluster(t)
+
 	// Wait for cluster to be healthy.
 	for _, url := range nodeURLs {
 		waitForHealth(t, url, 30*time.Second)
@@ -120,6 +133,8 @@ func TestChaos_LeaderKill_ShardMapConverges(t *testing.T) {
 // TestChaos_RollingRestart_NoDataLoss restarts nodes one by one during
 // continuous ingest and verifies all events are queryable.
 func TestChaos_RollingRestart_NoDataLoss(t *testing.T) {
+	requireCluster(t)
+
 	for _, url := range nodeURLs {
 		waitForHealth(t, url, 30*time.Second)
 	}

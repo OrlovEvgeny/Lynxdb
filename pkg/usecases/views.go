@@ -119,7 +119,7 @@ func (s *ViewService) TriggerBackfill(name string) error {
 
 // Patch updates a materialized view in-place without delete-and-recreate.
 // This avoids the window where events could be lost between delete and create.
-func (s *ViewService) Patch(name string, req PatchViewRequest) (*ViewSummary, error) {
+func (s *ViewService) Patch(name string, req PatchViewRequest) (*ViewDetail, error) {
 	def, err := s.engine.GetMV(name)
 	if err != nil {
 		return nil, err
@@ -147,13 +147,18 @@ func (s *ViewService) Patch(name string, req PatchViewRequest) (*ViewSummary, er
 		return nil, err
 	}
 
-	return &ViewSummary{
-		Name:      def.Name,
-		Status:    def.Status,
-		Query:     def.Query,
-		Type:      def.Type,
-		CreatedAt: def.CreatedAt,
-		UpdatedAt: def.UpdatedAt,
+	return &ViewDetail{
+		ViewSummary: ViewSummary{
+			Name:      def.Name,
+			Status:    def.Status,
+			Query:     def.Query,
+			Type:      def.Type,
+			CreatedAt: def.CreatedAt,
+			UpdatedAt: def.UpdatedAt,
+		},
+		Filter:    def.Filter,
+		Columns:   def.Columns,
+		Retention: def.Retention,
 	}, nil
 }
 

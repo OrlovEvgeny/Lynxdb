@@ -111,6 +111,6 @@ func TestE2E_Alerts_DeleteNonexistent_ReturnsNotFound(t *testing.T) {
 		t.Fatal("expected error deleting nonexistent alert, got nil")
 	}
 	if !client.IsNotFound(err) {
-		t.Logf("delete nonexistent returned: %v (expected NotFound)", err)
+		t.Errorf("delete nonexistent: expected NotFound, got %v", err)
 	}
 }

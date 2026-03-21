@@ -4,11 +4,25 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/lynxbase/lynxdb/pkg/auth"
 	"github.com/lynxbase/lynxdb/pkg/storage/views"
 	"github.com/lynxbase/lynxdb/pkg/usecases"
 )
+
+// formatDuration returns a human-readable duration string without trailing
+// zero-value components (e.g. "720h" instead of "720h0m0s").
+func formatDuration(d time.Duration) string {
+	if d == 0 {
+		return "0s"
+	}
+	s := d.String()
+	s = strings.TrimSuffix(s, "0s")
+	s = strings.TrimSuffix(s, "0m")
+	return s
+}
 
 func (s *Server) handleCreateMV(w http.ResponseWriter, r *http.Request) {
 	if !s.requireScope(w, r, auth.ScopeAdmin) {
@@ -90,7 +104,7 @@ func (s *Server) handleGetMV(w http.ResponseWriter, r *http.Request) {
 		"type":       detail.Type,
 		"filter":     detail.Filter,
 		"columns":    detail.Columns,
-		"retention":  detail.Retention.String(),
+		"retention":  formatDuration(detail.Retention),
 		"created_at": detail.CreatedAt,
 		"updated_at": detail.UpdatedAt,
 	}
@@ -156,9 +170,10 @@ func (s *Server) handlePatchView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondData(w, http.StatusOK, map[string]interface{}{
-		"name":    result.Name,
-		"status":  result.Status,
-		"updated": true,
+		"name":      result.Name,
+		"status":    result.Status,
+		"retention": formatDuration(result.Retention),
+		"updated":   true,
 	})
 }
 

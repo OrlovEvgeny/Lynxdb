@@ -74,6 +74,6 @@ func TestE2E_SavedQueries_DeleteNonexistent_ReturnsNotFound(t *testing.T) {
 		t.Fatal("expected error deleting nonexistent saved query, got nil")
 	}
 	if !client.IsNotFound(err) {
-		t.Logf("delete nonexistent returned: %v (expected NotFound)", err)
+		t.Errorf("delete nonexistent: expected NotFound, got %v", err)
 	}
 }
