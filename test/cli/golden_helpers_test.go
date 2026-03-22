@@ -150,24 +150,44 @@ func normalizeNDJSON(raw string) string {
 	return strings.Join(lines, "\n") + "\n"
 }
 
-// normalizeMap recursively normalizes float64 values that are whole numbers to integers.
+// normalizeMap recursively normalizes float64 values:
+//   - Whole-number floats (e.g., 5200.0) are converted to int64
+//   - Other floats are rounded to 12 significant digits to absorb
+//     cross-platform floating-point precision differences
 func normalizeMap(m map[string]interface{}) {
 	for k, v := range m {
 		switch val := v.(type) {
 		case float64:
-			if val == math.Trunc(val) && !math.IsInf(val, 0) && !math.IsNaN(val) {
-				m[k] = int64(val)
-			}
+			m[k] = normalizeFloat(val)
 		case map[string]interface{}:
 			normalizeMap(val)
 		case []interface{}:
 			for i, elem := range val {
-				if f, ok := elem.(float64); ok && f == math.Trunc(f) && !math.IsInf(f, 0) && !math.IsNaN(f) {
-					val[i] = int64(f)
+				if f, ok := elem.(float64); ok {
+					val[i] = normalizeFloat(f)
 				}
 			}
 		}
 	}
+}
+
+// normalizeFloat converts integer-valued floats to int64, and rounds
+// other floats to 12 significant digits for cross-platform consistency.
+func normalizeFloat(f float64) interface{} {
+	if math.IsInf(f, 0) || math.IsNaN(f) {
+		return f
+	}
+	if f == math.Trunc(f) {
+		return int64(f)
+	}
+	// Round to 12 significant digits.
+	if f == 0 {
+		return f
+	}
+	d := math.Ceil(math.Log10(math.Abs(f)))
+	pow := math.Pow(10, 12-d)
+
+	return math.Round(f*pow) / pow
 }
 
 // normalizeText trims trailing whitespace per line and trailing empty lines.

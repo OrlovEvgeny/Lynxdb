@@ -1,3 +1,3 @@
-{"count":7,"percent":26.923076923076923,"service":"payment-service"}
-{"count":5,"percent":19.230769230769234,"service":"gateway-service"}
-{"count":4,"percent":15.384615384615385,"service":"user-service"}
+{"count":7,"percent":26.9230769231,"service":"payment-service"}
+{"count":5,"percent":19.2307692308,"service":"gateway-service"}
+{"count":4,"percent":15.3846153846,"service":"user-service"}

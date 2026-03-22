@@ -257,7 +257,7 @@ func (v Value) Interface() interface{} {
 	case FieldTypeBool:
 		return v.num != 0
 	case FieldTypeTimestamp:
-		return time.Unix(0, v.num)
+		return time.Unix(0, v.num).UTC()
 	default:
 		return nil
 	}
