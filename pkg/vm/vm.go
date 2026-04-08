@@ -312,7 +312,10 @@ func (vm *VM) execGlobMatch(prog *Program, ins []byte, ip int) (int, error) {
 		vm.stack[vm.sp-1] = event.BoolValue(false)
 	} else {
 		pattern := prog.RegexPatterns[idx]
-		matched, _ := filepath.Match(pattern, valueToString(a))
+		matched, matchErr := filepath.Match(pattern, valueToString(a))
+		if matchErr != nil {
+			return 0, fmt.Errorf("glob match: invalid pattern %q: %w", pattern, matchErr)
+		}
 		vm.stack[vm.sp-1] = event.BoolValue(matched)
 	}
 

@@ -233,9 +233,43 @@ func (s *Store) persist(data []byte) error {
 	}
 	path := filepath.Join(s.dir, storeFile)
 	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o600); err != nil {
+
+	f, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	if err != nil {
+		return fmt.Errorf("savedqueries: create tmp: %w", err)
+	}
+	if _, err := f.Write(data); err != nil {
+		f.Close()
+
 		return fmt.Errorf("savedqueries: write tmp: %w", err)
 	}
+	if err := f.Sync(); err != nil {
+		f.Close()
 
-	return os.Rename(tmp, path)
+		return fmt.Errorf("savedqueries: sync tmp: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("savedqueries: close tmp: %w", err)
+	}
+	if err := os.Rename(tmp, path); err != nil {
+		return fmt.Errorf("savedqueries: rename: %w", err)
+	}
+
+	return syncDir(s.dir)
+}
+
+// syncDir fsyncs a directory to ensure metadata operations (rename, link)
+// are persisted to stable storage.
+func syncDir(dir string) error {
+	d, err := os.Open(dir)
+	if err != nil {
+		return fmt.Errorf("savedqueries: sync dir %s: %w", dir, err)
+	}
+	if err := d.Sync(); err != nil {
+		d.Close()
+
+		return fmt.Errorf("savedqueries: sync dir %s: %w", dir, err)
+	}
+
+	return d.Close()
 }

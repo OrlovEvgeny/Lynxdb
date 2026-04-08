@@ -20,7 +20,10 @@ import (
 // Pooled ZSTD encoder/decoder to avoid ~1ms + ~1MB allocation per call.
 var zstdEncoderPool = sync.Pool{
 	New: func() interface{} {
-		enc, _ := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedDefault))
+		enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedDefault))
+		if err != nil {
+			panic(fmt.Sprintf("segment: zstd encoder init: %v", err))
+		}
 
 		return enc
 	},
@@ -28,7 +31,10 @@ var zstdEncoderPool = sync.Pool{
 
 var zstdDecoderPool = sync.Pool{
 	New: func() interface{} {
-		dec, _ := zstd.NewReader(nil)
+		dec, err := zstd.NewReader(nil)
+		if err != nil {
+			panic(fmt.Sprintf("segment: zstd decoder init: %v", err))
+		}
 
 		return dec
 	},

@@ -39,7 +39,9 @@ func (t *TeeIterator) Next(ctx context.Context) (*Batch, error) {
 	batch, err := t.child.Next(ctx)
 	if batch != nil && t.writer != nil {
 		for i := 0; i < batch.Len; i++ {
-			_ = t.enc.Encode(teeToMap(batch.Row(i)))
+			if encErr := t.enc.Encode(teeToMap(batch.Row(i))); encErr != nil {
+				return batch, fmt.Errorf("tee: write to %s: %w", t.dest, encErr)
+			}
 		}
 	}
 
@@ -47,11 +49,17 @@ func (t *TeeIterator) Next(ctx context.Context) (*Batch, error) {
 }
 
 func (t *TeeIterator) Close() error {
+	var closeErr error
 	if t.writer != nil {
-		_ = t.writer.Close()
+		closeErr = t.writer.Close()
 	}
 
-	return t.child.Close()
+	childErr := t.child.Close()
+	if closeErr != nil {
+		return closeErr
+	}
+
+	return childErr
 }
 
 func (t *TeeIterator) Schema() []FieldInfo { return t.child.Schema() }

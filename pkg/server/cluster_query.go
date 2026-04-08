@@ -161,7 +161,10 @@ func (a *engineShardQueryAdapter) SubmitShardPartialAgg(ctx context.Context, par
 	}
 
 	// Build event store filtered by hints.
-	store, _, _ := a.engine.buildEventStore(ctx, hints, nil)
+	store, _, storeErr := a.engine.buildEventStore(ctx, hints, nil)
+	if storeErr != nil {
+		return nil, fmt.Errorf("engineShardQueryAdapter.SubmitShardPartialAgg: build event store: %w", storeErr)
+	}
 
 	// Compute partial aggregation across all events in all indexes.
 	var allEvents []*event.Event

@@ -720,7 +720,10 @@ func (e *Engine) BufferedEventCount() int64 {
 func (e *Engine) BuildEventStoreFromHints(hints *spl2.QueryHints) map[string][]*event.Event {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	store, _, _ := e.buildEventStore(ctx, hints, nil)
+	store, _, storeErr := e.buildEventStore(ctx, hints, nil)
+	if storeErr != nil {
+		return nil
+	}
 
 	return store
 }

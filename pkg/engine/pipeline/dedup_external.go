@@ -523,7 +523,9 @@ func (d *DedupIterator) spill() error {
 
 	// Re-track the limit counts map that persists after spill.
 	if limitMapBytes > 0 {
-		_ = d.acct.Grow(limitMapBytes)
+		if err := d.acct.Grow(limitMapBytes); err != nil {
+			slog.Warn("dedup: failed to track limit map memory after spill", "bytes", limitMapBytes, "err", err)
+		}
 	}
 
 	// Notify coordinator that this operator has spilled, allowing rebalancing.
@@ -570,8 +572,9 @@ func (d *DedupIterator) processRemainingExternal(batch *Batch, startRow int, mat
 			return matchCount, fmt.Errorf("dedup_external: add: %w", err)
 		}
 		if d.limit > 1 && !limitCapped {
-			// Track memory for the new limit count entry (best-effort).
-			_ = d.acct.Grow(estimatedLimitCountEntryBytes)
+			if err := d.acct.Grow(estimatedLimitCountEntryBytes); err != nil {
+				slog.Warn("dedup: failed to track limit count memory", "err", err)
+			}
 			d.externalLimitCounts[h] = 1
 			// Re-check cap after insertion.
 			if len(d.externalLimitCounts) > maxExternalLimitEntries {

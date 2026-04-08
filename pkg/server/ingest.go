@@ -43,6 +43,8 @@ func (e *Engine) Ingest(events []*event.Event) error {
 	// Cluster mode: route events to shard primaries via the cluster router.
 	// The router handles local fast path (events for shards owned by this node)
 	// and remote forwarding (events for shards owned by other nodes).
+	// Shutdown is guarded by the closing flag checked above, so context.Background
+	// is safe here — the context is only used for distributed tracing propagation.
 	if e.clusterRouter != nil {
 		return e.clusterRouter.Route(context.Background(), events)
 	}

@@ -116,9 +116,14 @@ func (f *MetaFSM) Snapshot() (raft.FSMSnapshot, error) {
 func (f *MetaFSM) Restore(rc io.ReadCloser) error {
 	defer rc.Close()
 
-	data, err := io.ReadAll(rc)
+	// Limit snapshot reads to 256MB as defense against corrupted snapshots.
+	const maxSnapshotSize = 256 << 20
+	data, err := io.ReadAll(io.LimitReader(rc, maxSnapshotSize+1))
 	if err != nil {
 		return fmt.Errorf("meta.FSM.Restore: read: %w", err)
+	}
+	if len(data) > maxSnapshotSize {
+		return fmt.Errorf("meta.FSM.Restore: snapshot exceeds %dMB limit", maxSnapshotSize>>20)
 	}
 
 	var state MetaState

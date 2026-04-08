@@ -71,10 +71,14 @@ func (b *EventBus) Unsubscribe(id uint64) {
 // if a subscriber's channel is full, events are dropped for that subscriber.
 func (b *EventBus) Publish(events []*event.Event) {
 	b.mu.RLock()
-	defer b.mu.RUnlock()
+	subs := make([]*subscriber, 0, len(b.subscribers))
+	for _, sub := range b.subscribers {
+		subs = append(subs, sub)
+	}
+	b.mu.RUnlock()
 
 	for _, ev := range events {
-		for _, sub := range b.subscribers {
+		for _, sub := range subs {
 			select {
 			case sub.ch <- ev:
 			default:

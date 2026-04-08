@@ -113,7 +113,7 @@ func (n *Node) Stop() error {
 		}
 	}
 
-	// Stop gRPC server.
+	// Stop gRPC server (rpc.Server.Stop calls GracefulStop internally).
 	if n.grpcServer != nil {
 		n.grpcServer.Stop()
 	}

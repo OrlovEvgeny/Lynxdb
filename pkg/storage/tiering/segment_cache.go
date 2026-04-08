@@ -247,12 +247,14 @@ func (sc *SegmentCache) PutChunk(segmentID string, rgIndex int, column string, d
 			break
 		}
 		evicted := sc.chunkLRU.Remove(back).(*chunkEntry)
-		delete(sc.chunkMap, evicted.key)
 		if err := os.Remove(evicted.path); err != nil && !os.IsNotExist(err) {
 			slog.Warn("segment_cache: failed to evict chunk file", "path", evicted.path, "error", err)
-			// Don't decrement diskBytes — file still on disk.
-			continue
+			// Re-insert at back so it can be retried; don't leak diskBytes accounting.
+			backElem := sc.chunkLRU.PushBack(evicted)
+			sc.chunkMap[evicted.key] = backElem
+			break
 		}
+		delete(sc.chunkMap, evicted.key)
 		sc.diskBytes -= evicted.sizeBytes
 	}
 	sc.mu.Unlock()

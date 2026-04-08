@@ -1129,7 +1129,7 @@ func (r *Reader) ReadEventsFiltered(preds []Predicate, searchBitmap *roaring.Bit
 			// Fall back to ReadStrings which handles const columns correctly.
 			values, err := r.ReadStrings(pred.Field)
 			if err != nil {
-				continue
+				return nil, fmt.Errorf("segment.ReadEventsFiltered: read column %q for predicate: %w", pred.Field, err)
 			}
 			for _, pos := range matchBitmap.ToArray() {
 				if int(pos) < len(values) && evalStringPredicate(values[pos], pred.Op, pred.Value) {
@@ -1164,7 +1164,7 @@ func (r *Reader) ReadEventsFiltered(preds []Predicate, searchBitmap *roaring.Bit
 			// Fallback: full decode.
 			values, err := r.ReadStrings(pred.Field)
 			if err != nil {
-				continue
+				return nil, fmt.Errorf("segment.ReadEventsFiltered: read column %q for predicate: %w", pred.Field, err)
 			}
 			for _, pos := range matchBitmap.ToArray() {
 				if int(pos) < len(values) && evalStringPredicate(values[pos], pred.Op, pred.Value) {
@@ -1174,7 +1174,7 @@ func (r *Reader) ReadEventsFiltered(preds []Predicate, searchBitmap *roaring.Bit
 		case column.EncodingLZ4:
 			values, err := r.ReadStrings(pred.Field)
 			if err != nil {
-				continue
+				return nil, fmt.Errorf("segment.ReadEventsFiltered: read column %q for predicate: %w", pred.Field, err)
 			}
 			for _, pos := range matchBitmap.ToArray() {
 				if int(pos) < len(values) && evalStringPredicate(values[pos], pred.Op, pred.Value) {
@@ -1184,7 +1184,7 @@ func (r *Reader) ReadEventsFiltered(preds []Predicate, searchBitmap *roaring.Bit
 		case column.EncodingDelta:
 			values, err := r.ReadInt64s(pred.Field)
 			if err != nil {
-				continue
+				return nil, fmt.Errorf("segment.ReadEventsFiltered: read column %q for predicate: %w", pred.Field, err)
 			}
 			predValF, err := strconv.ParseFloat(pred.Value, 64)
 			if err != nil {
@@ -1199,7 +1199,7 @@ func (r *Reader) ReadEventsFiltered(preds []Predicate, searchBitmap *roaring.Bit
 		case column.EncodingGorilla:
 			values, err := r.ReadFloat64s(pred.Field)
 			if err != nil {
-				continue
+				return nil, fmt.Errorf("segment.ReadEventsFiltered: read column %q for predicate: %w", pred.Field, err)
 			}
 			predVal, err := strconv.ParseFloat(pred.Value, 64)
 			if err != nil {
