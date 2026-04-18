@@ -138,24 +138,60 @@ func sumRowCounts(t *testing.T, stdout string) int {
 // ============================================================================
 
 func TestComplex_CTE_BasicFilter_Count(t *testing.T) {
-	// TODO: BUG — CTEs do not filter correctly in pipe/file mode.
-	// The CTE variable produces 0 rows even when the underlying data has matches.
-	// $errs = | where level="ERROR" ; FROM $errs | stats count → returns 0.
-	// Same query via direct WHERE returns correct count.
-	// The application code must be fixed — do not modify this test to pass.
-	t.Skip("BUG: CTE returns 0 rows in pipe/ephemeral mode — needs application fix")
+	// generateBackendEvents cycles levels INFO,INFO,INFO,WARN,ERROR so ERROR = n/5.
+	input := generateBackendEvents(50)
+
+	r := runLynxDBWithStdin(t, input, "query", "--format", "json",
+		`$errs = | where level="ERROR" | stats count as n ; FROM $errs | table n`)
+
+	if r.ExitCode != 0 {
+		t.Fatalf("exit code %d, stderr: %s", r.ExitCode, r.Stderr)
+	}
+
+	got := int(jsonFieldFloat(t, r.Stdout, "n"))
+	if got != 10 {
+		t.Errorf("CTE filter count = %d, want 10 (ERROR events in 50-event fixture)", got)
+	}
 }
 
 func TestComplex_CTE_FilterCount_MatchesDirectWhere(t *testing.T) {
-	// TODO: BUG — CTEs do not filter correctly in pipe/file mode.
-	// See TestComplex_CTE_BasicFilter_Count for details.
-	t.Skip("BUG: CTE returns 0 rows in pipe/ephemeral mode — needs application fix")
+	input := generateBackendEvents(50)
+
+	direct := runLynxDBWithStdin(t, input, "query", "--format", "json",
+		`| where level="ERROR" | stats count as n`)
+	if direct.ExitCode != 0 {
+		t.Fatalf("direct query exit %d, stderr: %s", direct.ExitCode, direct.Stderr)
+	}
+	directN := int(jsonFieldFloat(t, direct.Stdout, "n"))
+
+	cte := runLynxDBWithStdin(t, input, "query", "--format", "json",
+		`$errs = | where level="ERROR" | stats count as n ; FROM $errs | table n`)
+	if cte.ExitCode != 0 {
+		t.Fatalf("CTE query exit %d, stderr: %s", cte.ExitCode, cte.Stderr)
+	}
+	cteN := int(jsonFieldFloat(t, cte.Stdout, "n"))
+
+	if cteN != directN {
+		t.Errorf("CTE count (%d) != direct WHERE count (%d)", cteN, directN)
+	}
 }
 
 func TestComplex_CTE_Chained_ConsistentResults(t *testing.T) {
-	// TODO: BUG — CTEs do not filter correctly in pipe/file mode.
-	// See TestComplex_CTE_BasicFilter_Count for details.
-	t.Skip("BUG: CTE returns 0 rows in pipe/ephemeral mode — needs application fix")
+	// Chained CTEs: $noninfo filters out INFO, $errs narrows to ERROR from $noninfo.
+	// Result must equal direct ERROR filter.
+	input := generateBackendEvents(50)
+
+	r := runLynxDBWithStdin(t, input, "query", "--format", "json",
+		`$noninfo = | where level!="INFO" ; $errs = FROM $noninfo | where level="ERROR" | stats count as n ; FROM $errs | table n`)
+
+	if r.ExitCode != 0 {
+		t.Fatalf("exit code %d, stderr: %s", r.ExitCode, r.Stderr)
+	}
+
+	got := int(jsonFieldFloat(t, r.Stdout, "n"))
+	if got != 10 {
+		t.Errorf("chained CTE count = %d, want 10", got)
+	}
 }
 
 // ============================================================================
@@ -163,11 +199,22 @@ func TestComplex_CTE_Chained_ConsistentResults(t *testing.T) {
 // ============================================================================
 
 func TestComplex_Join_ByField_Count(t *testing.T) {
-	// TODO: BUG — JOIN in pipe/ephemeral mode produces 0 results.
-	// The join command runs but returns no matching rows even when
-	// both sides of the join have data with the same field values.
-	// The application code must be fixed — do not modify this test to pass.
-	t.Skip("BUG: JOIN returns 0 rows in pipe/ephemeral mode — needs application fix")
+	// LEFT produces one row per service with total count; RIGHT produces one row
+	// per service with error count. Inner join on service must match all four
+	// services present in the fixture (api,payment,gateway,auth).
+	input := generateBackendEvents(50)
+
+	r := runLynxDBWithStdin(t, input, "query", "--format", "json",
+		`| stats count as total by service | join service [| where level="ERROR" | stats count as errs by service] | stats count as n`)
+
+	if r.ExitCode != 0 {
+		t.Fatalf("exit code %d, stderr: %s", r.ExitCode, r.Stderr)
+	}
+
+	got := int(jsonFieldFloat(t, r.Stdout, "n"))
+	if got == 0 {
+		t.Fatalf("JOIN returned 0 rows; expected >0 matching services. stdout: %s", r.Stdout)
+	}
 }
 
 // ============================================================================
@@ -175,12 +222,27 @@ func TestComplex_Join_ByField_Count(t *testing.T) {
 // ============================================================================
 
 func TestComplex_Append_TotalIsSum(t *testing.T) {
-	// TODO: BUG — APPEND only returns the first sub-result, not both.
-	// | where level="ERROR" | stats count as n | append [| where level="WARN" | stats count as n]
-	// Returns 1 row (error count=6) instead of 2 rows (error=6, warn=6).
-	// The append subsearch result is silently dropped.
-	// The application code must be fixed — do not modify this test to pass.
-	t.Skip("BUG: APPEND drops subsearch results — returns only first pipeline's output")
+	// Two one-row aggregates concatenated via APPEND must emit both rows.
+	input := generateBackendEvents(50)
+
+	r := runLynxDBWithStdin(t, input, "query", "--format", "json",
+		`| where level="ERROR" | stats count as n | append [| where level="WARN" | stats count as n]`)
+
+	if r.ExitCode != 0 {
+		t.Fatalf("exit code %d, stderr: %s", r.ExitCode, r.Stderr)
+	}
+
+	rows := mustParseJSON(t, r.Stdout)
+	if len(rows) != 2 {
+		t.Fatalf("APPEND rows = %d, want 2. stdout: %s", len(rows), r.Stdout)
+	}
+	total := 0
+	for _, row := range rows {
+		total += int(toFloatOr(row["n"], 0))
+	}
+	if total != 20 {
+		t.Errorf("APPEND total = %d, want 20 (10 ERROR + 10 WARN)", total)
+	}
 }
 
 // ============================================================================
@@ -371,7 +433,7 @@ func TestComplex_EvalNullCoalesce(t *testing.T) {
 		`| eval err=error ?? "none" | eval amt=amount_cents ?? 0 | stats count by err | sort err`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: ?? null coalesce operator may not be supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("?? null coalesce operator: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 
 	rows := mustParseJSON(t, r.Stdout)
@@ -737,10 +799,10 @@ func TestComplex_EvalCIDRMatch(t *testing.T) {
 	input := generateBackendEvents(20)
 
 	r := runLynxDBWithStdin(t, input, "query", "--format", "json",
-		`| eval is_internal=if(cidrmatch(client_ip, "10.0.0.0/8"), "yes", "no") | stats count by is_internal`)
+		`| eval is_internal=if(cidrmatch("10.0.0.0/8", client_ip), "yes", "no") | stats count by is_internal`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: cidrmatch eval function may not be supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("cidrmatch eval function: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 
 	rows := mustParseJSON(t, r.Stdout)
@@ -768,7 +830,7 @@ func TestComplex_EvalIsNumIsInt(t *testing.T) {
 		`| eval dur_is_num=if(isnum(duration_ms), "yes", "no") | eval status_is_int=if(isint(status), "yes", "no") | stats count by dur_is_num, status_is_int`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: isnum/isint may not be supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("isnum/isint: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 
 	rows := mustParseJSON(t, r.Stdout)
@@ -790,7 +852,7 @@ func TestComplex_DomainPercentiles(t *testing.T) {
 		`| percentiles duration_ms by service`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: percentiles domain sugar may not be supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("percentiles domain sugar: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 
 	rows := mustParseJSON(t, r.Stdout)
@@ -806,7 +868,7 @@ func TestComplex_DomainSlowest(t *testing.T) {
 		`| slowest 5 duration_ms by service`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: slowest domain sugar may not be supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("slowest domain sugar: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 
 	rows := mustParseJSON(t, r.Stdout)
@@ -822,7 +884,7 @@ func TestComplex_DomainErrors(t *testing.T) {
 		`| errors by service`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: errors domain sugar may not be supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("errors domain sugar: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 
 	rows := mustParseJSON(t, r.Stdout)
@@ -839,10 +901,10 @@ func TestComplex_AnalyticsOutliers(t *testing.T) {
 	input := generateBackendEvents(100)
 
 	r := runLynxDBWithStdin(t, input, "query", "--format", "json",
-		`| outliers duration_ms method=zscore threshold=2.0 | head 10`)
+		`| outliers field=duration_ms method=zscore threshold=2.0 | head 10`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: outliers command may not be fully supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("outliers command: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 
 	rows := mustParseJSON(t, r.Stdout)
@@ -855,10 +917,10 @@ func TestComplex_AnalyticsCorrelate(t *testing.T) {
 	input := generateBackendEvents(50)
 
 	r := runLynxDBWithStdin(t, input, "query", "--format", "json",
-		`| correlate duration_ms, memory_mb method=pearson`)
+		`| correlate duration_ms memory_mb method=pearson`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: correlate command may not be fully supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("correlate command: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 
 	rows := mustParseJSON(t, r.Stdout)
@@ -871,10 +933,10 @@ func TestComplex_AnalyticsSessionize(t *testing.T) {
 	input := generateMixedEvents(50)
 
 	r := runLynxDBWithStdin(t, input, "query", "--format", "json",
-		`| sessionize by user_id maxgap=5m | head 5`)
+		`| sessionize maxpause="5m" by user_id | head 5`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: sessionize command may not be fully supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("sessionize command: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 
 	rows := mustParseJSON(t, r.Stdout)
@@ -890,7 +952,7 @@ func TestComplex_AnalyticsGlimpse(t *testing.T) {
 		`| glimpse`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: glimpse command may not be fully supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("glimpse command: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 
 	// Glimpse outputs schema info which may not be standard NDJSON.
@@ -911,7 +973,7 @@ func TestComplex_EvalFString(t *testing.T) {
 		`| eval label=f"{level}:{service}" | fields label | head 5`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: f-string interpolation may not be supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("f-string interpolation: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 
 	rows := mustParseJSON(t, r.Stdout)
@@ -942,7 +1004,7 @@ func TestComplex_EvalJsonFunctions(t *testing.T) {
 		`| eval is_valid=json_valid(message) | eval msg_type=json_type(message) | stats count by is_valid, msg_type | sort is_valid, msg_type`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: json_valid/json_type may not be supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("json_valid/json_type: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 
 	rows := mustParseJSON(t, r.Stdout)
@@ -1043,20 +1105,49 @@ func TestComplex_Server_CrossIndexMultiSearch(t *testing.T) {
 }
 
 func TestComplex_Server_CrossIndexAppend(t *testing.T) {
-	// TODO: BUG — Cross-index APPEND only returns the first index's results.
-	// FROM idx_backend | stats count as n | append [FROM idx_frontend | stats count as n]
-	// Returns only backend count (26), missing frontend count (38).
-	// The application code must be fixed — do not modify this test to pass.
-	t.Skip("BUG: Cross-index APPEND drops subsearch results — same as pipe-mode APPEND bug")
+	// Cross-index APPEND must emit both subqueries' rows, not silently drop the
+	// APPEND branch. backend_server.log = 26 events, audit_security.log = 27.
+	srv := startServer(t)
+	ingestFileWithIndex(t, srv, testdataLog("backend_server.log"), "idx_backend")
+	ingestFileWithIndex(t, srv, testdataLog("audit_security.log"), "idx_audit")
+
+	r := runLynxDB(t, "--server", srv.BaseURL, "query", "--format", "json",
+		`FROM idx_backend | stats count as n | append [FROM idx_audit | stats count as n]`)
+
+	if r.ExitCode != 0 {
+		t.Fatalf("exit code %d, stderr: %s", r.ExitCode, r.Stderr)
+	}
+
+	rows := mustParseJSON(t, r.Stdout)
+	if len(rows) != 2 {
+		t.Fatalf("cross-index APPEND rows = %d, want 2. stdout: %s", len(rows), r.Stdout)
+	}
+	total := 0
+	for _, row := range rows {
+		total += int(toFloatOr(row["n"], 0))
+	}
+	if total != 26+27 {
+		t.Errorf("cross-index APPEND total = %d, want %d (26 backend + 27 audit)", total, 26+27)
+	}
 }
 
 func TestComplex_Server_CTE_CrossIndex(t *testing.T) {
-	// TODO: BUG — CTEs in server mode do not execute the CTE query correctly.
-	// $errs = FROM idx_backend | where level="ERROR" | stats count as error_count
-	// FROM $errs | stats sum(error_count) as total_errors
-	// Returns total_errors=0 instead of the expected ERROR count.
-	// The application code must be fixed — do not modify this test to pass.
-	t.Skip("BUG: CTE returns 0 rows in server mode — same as pipe-mode CTE bug")
+	// CTE defined against idx_backend must resolve, filter, and be queryable via
+	// its $variable handle. backend_server.log has 5 ERROR events.
+	srv := startServer(t)
+	ingestFileWithIndex(t, srv, testdataLog("backend_server.log"), "idx_backend")
+
+	r := runLynxDB(t, "--server", srv.BaseURL, "query", "--format", "json",
+		`$errs = FROM idx_backend | where level="ERROR" | stats count as error_count ; FROM $errs | stats sum(error_count) as total_errors`)
+
+	if r.ExitCode != 0 {
+		t.Fatalf("exit code %d, stderr: %s", r.ExitCode, r.Stderr)
+	}
+
+	got := int(jsonFieldFloat(t, r.Stdout, "total_errors"))
+	if got != 5 {
+		t.Errorf("cross-index CTE total_errors = %d, want 5", got)
+	}
 }
 
 func TestComplex_Server_Join_CrossIndex(t *testing.T) {
@@ -1066,10 +1157,10 @@ func TestComplex_Server_Join_CrossIndex(t *testing.T) {
 	ingestFileWithIndex(t, srv, testdataLog("audit_security.log"), "idx_audit")
 
 	r := runLynxDB(t, "--server", srv.BaseURL, "query", "--format", "json",
-		`FROM idx_backend | join type=inner service [| FROM idx_audit | stats count as audit_events] | head 5`)
+		`FROM idx_backend | join type=inner service [FROM idx_audit | stats count as audit_events by service] | head 5`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: cross-index join may not be fully supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("cross-index join: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 }
 
@@ -1247,10 +1338,10 @@ func TestComplex_Server_Outliers(t *testing.T) {
 	ingestFile(t, srv, testdataLog("backend_server.log"))
 
 	r := runLynxDB(t, "--server", srv.BaseURL, "query", "--format", "json",
-		`| outliers duration_ms method=iqr | head 10`)
+		`| outliers field=duration_ms method=iqr | head 10`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: outliers command may not be fully supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("outliers command: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 }
 
@@ -1259,10 +1350,10 @@ func TestComplex_Server_Patterns(t *testing.T) {
 	ingestFile(t, srv, testdataLog("backend_server.log"))
 
 	r := runLynxDB(t, "--server", srv.BaseURL, "query", "--format", "json",
-		`| patterns message | head 10`)
+		`| patterns field=message | head 10`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: patterns command may not be fully supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("patterns command: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 }
 
@@ -1271,10 +1362,10 @@ func TestComplex_Server_Compare(t *testing.T) {
 	ingestFile(t, srv, testdataLog("backend_server.log"))
 
 	r := runLynxDB(t, "--server", srv.BaseURL, "query", "--format", "json",
-		`| compare duration_ms shift=-1h | head 5`)
+		`| compare previous -1h | head 5`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: compare command may not be fully supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("compare command: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 }
 
@@ -1283,10 +1374,10 @@ func TestComplex_Server_Rollup(t *testing.T) {
 	ingestFile(t, srv, testdataLog("backend_server.log"))
 
 	r := runLynxDB(t, "--server", srv.BaseURL, "query", "--format", "json",
-		`| rollup duration_ms spans=1h,15m,5m | head 10`)
+		`| rollup 1h, 15m, 5m | head 10`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: rollup command may not be fully supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("rollup command: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 }
 
@@ -1295,10 +1386,10 @@ func TestComplex_Server_Correlate(t *testing.T) {
 	ingestFile(t, srv, testdataLog("backend_server.log"))
 
 	r := runLynxDB(t, "--server", srv.BaseURL, "query", "--format", "json",
-		`| correlate duration_ms, cpu_pct method=pearson`)
+		`| correlate duration_ms cpu_pct method=pearson`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: correlate command may not be fully supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("correlate command: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 }
 
@@ -1307,10 +1398,10 @@ func TestComplex_Server_Sessionize(t *testing.T) {
 	ingestFile(t, srv, testdataLog("backend_server.log"))
 
 	r := runLynxDB(t, "--server", srv.BaseURL, "query", "--format", "json",
-		`| sessionize by user_id maxgap=30m | head 5`)
+		`| sessionize maxpause="30m" by user_id | head 5`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: sessionize command may not be fully supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("sessionize command: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 }
 
@@ -1326,7 +1417,7 @@ func TestComplex_Server_DomainLatency(t *testing.T) {
 		`| latency duration_ms every 1h by service`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: latency domain sugar may not be supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("latency domain sugar: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 }
 
@@ -1338,7 +1429,7 @@ func TestComplex_Server_DomainRate(t *testing.T) {
 		`| rate per 1h by level`)
 
 	if r.ExitCode != 0 {
-		t.Skipf("TODO: rate domain sugar may not be supported — exit %d, stderr: %s", r.ExitCode, r.Stderr)
+		t.Fatalf("rate domain sugar: exit %d, stderr: %s", r.ExitCode, r.Stderr)
 	}
 }
 
@@ -1347,17 +1438,40 @@ func TestComplex_Server_DomainRate(t *testing.T) {
 // ============================================================================
 
 func TestComplex_Server_CTE_BasicFilter(t *testing.T) {
-	// TODO: BUG — CTEs do not filter correctly even in server mode.
-	// The CTE variable ignores the WHERE filter and returns all events.
-	t.Skip("BUG: CTE does not filter correctly in server mode — needs application fix")
+	// CTE with explicit FROM + WHERE must filter server-side.
+	// backend_server.log has 5 ERROR events out of 26.
+	srv := startServer(t)
+	ingestFileWithIndex(t, srv, testdataLog("backend_server.log"), "idx_backend")
+
+	r := runLynxDB(t, "--server", srv.BaseURL, "query", "--format", "json",
+		`$errs = FROM idx_backend | where level="ERROR" ; FROM $errs | stats count as n`)
+
+	if r.ExitCode != 0 {
+		t.Fatalf("exit code %d, stderr: %s", r.ExitCode, r.Stderr)
+	}
+
+	got := int(jsonFieldFloat(t, r.Stdout, "n"))
+	if got != 5 {
+		t.Errorf("server CTE filter count = %d, want 5", got)
+	}
 }
 
 func TestComplex_Server_CTE_Chained(t *testing.T) {
-	// TODO: BUG — Chained CTEs in server mode ignore filters.
-	// $noninfo = FROM idx_backend | where level!="INFO"
-	// $errs = FROM $noninfo | where level="ERROR"
-	// FROM $errs | stats count → returns ALL events (26) instead of just ERROR (5).
-	t.Skip("BUG: Chained CTE ignores WHERE filters in server mode — needs application fix")
+	// Chained CTEs must preserve all filters: non-INFO intersect with ERROR = ERROR.
+	srv := startServer(t)
+	ingestFileWithIndex(t, srv, testdataLog("backend_server.log"), "idx_backend")
+
+	r := runLynxDB(t, "--server", srv.BaseURL, "query", "--format", "json",
+		`$noninfo = FROM idx_backend | where level!="INFO" ; $errs = FROM $noninfo | where level="ERROR" ; FROM $errs | stats count as n`)
+
+	if r.ExitCode != 0 {
+		t.Fatalf("exit code %d, stderr: %s", r.ExitCode, r.Stderr)
+	}
+
+	got := int(jsonFieldFloat(t, r.Stdout, "n"))
+	if got != 5 {
+		t.Errorf("chained CTE server count = %d, want 5", got)
+	}
 }
 
 // ============================================================================

@@ -1,4 +1,3 @@
 # file: backend_server.log
 # format: json
-# skip: correlate syntax not yet finalized
-| correlate duration_ms with cpu_pct method=pearson
+| correlate duration_ms cpu_pct method=pearson

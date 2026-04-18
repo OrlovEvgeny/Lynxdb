@@ -243,6 +243,10 @@ func (psw *PartStreamWriter) Finalize(ctx context.Context) (*Meta, error) {
 		os.Remove(psw.tmpPath)
 		return nil, fmt.Errorf("part.PartStreamWriter: rename: %w", err)
 	}
+	if err := syncDir(psw.partDir); err != nil {
+		os.Remove(finalPath)
+		return nil, fmt.Errorf("part.PartStreamWriter: %w", err)
+	}
 
 	if psw.logger != nil {
 		psw.logger.Debug("streaming part write complete",

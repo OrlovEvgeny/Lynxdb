@@ -16,7 +16,9 @@ func (e *Engine) startTiering(ctx context.Context) {
 	if interval == 0 {
 		interval = 5 * time.Minute
 	}
+	e.tieringWG.Add(1)
 	go func() {
+		defer e.tieringWG.Done()
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 		for {

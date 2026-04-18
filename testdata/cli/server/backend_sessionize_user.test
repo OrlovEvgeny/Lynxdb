@@ -1,3 +1,2 @@
 # format: json
-# skip: sessionize syntax not yet finalized
-FROM idx_backend | sessionize user_id maxgap=30m | fields user_id, duration, eventcount | head 5
+FROM backend | sessionize maxpause="30m" by user_id | fields user_id, duration, eventcount | head 5

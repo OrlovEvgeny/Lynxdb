@@ -1,3 +1,2 @@
 # format: json
-# skip: outliers syntax not yet finalized
-FROM idx_backend | outliers field=duration_ms method=iqr | head 10
+FROM backend | outliers field=duration_ms method=iqr | head 10

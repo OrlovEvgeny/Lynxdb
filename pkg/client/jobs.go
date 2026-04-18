@@ -90,13 +90,13 @@ func (c *Client) jobResultToQueryResult(job *JobResult) (*QueryResult, error) {
 	result := &QueryResult{Meta: job.Meta}
 
 	switch QueryResultType(typed.Type) {
-	case ResultTypeEvents:
+	case ResultTypeEvents, ResultTypeSchema:
 		var events EventsResult
 		if err := json.Unmarshal(*job.Results, &events); err != nil {
 			return nil, fmt.Errorf("lynxdb: decode job events: %w", err)
 		}
 
-		result.Type = ResultTypeEvents
+		result.Type = QueryResultType(typed.Type)
 		result.Events = &events
 	case ResultTypeAggregate, ResultTypeTimechart:
 		var agg AggregateResult

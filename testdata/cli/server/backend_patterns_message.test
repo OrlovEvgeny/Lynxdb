@@ -1,3 +1,2 @@
 # format: json
-# skip: patterns syntax not yet finalized
-FROM idx_backend | patterns field=message | head 10
+FROM backend | patterns field=message | head 10

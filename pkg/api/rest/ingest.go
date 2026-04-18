@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -64,36 +65,145 @@ func (s *Server) handleIngestEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload []receiver.EventPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+	decoder := json.NewDecoder(r.Body)
+	batchSize := s.ingestCfg.MaxBatchSize
+	if batchSize <= 0 {
+		batchSize = 1000
+	}
+	pipe := s.ingestPipeline()
+	batch := make([]*event.Event, 0, batchSize)
+	accepted := 0
+	failed := 0
+
+	tok, err := decoder.Token()
+	if err != nil {
 		respondError(w, ErrCodeInvalidJSON, http.StatusBadRequest,
 			fmt.Sprintf("invalid JSON: %s", sanitizeErrorMessage(err.Error())))
 
 		return
 	}
-
-	events := make([]*event.Event, len(payload))
-	for i, p := range payload {
-		events[i] = p.ToEvent()
+	delim, ok := tok.(json.Delim)
+	if !ok || delim != '[' {
+		respondError(w, ErrCodeInvalidJSON, http.StatusBadRequest, "invalid JSON: expected top-level array")
+		return
 	}
 
-	pipe := s.ingestPipeline()
-	processed, err := pipe.Process(events)
+	writeSummary := func(warning string) {
+		resp := map[string]interface{}{
+			"accepted": accepted,
+			"failed":   failed,
+		}
+		if warning != "" {
+			resp["warning"] = warning
+		}
+		respondData(w, http.StatusOK, resp)
+	}
+
+	flushBatch := func() bool {
+		if len(batch) == 0 {
+			return true
+		}
+
+		processed, processErr := pipe.Process(batch)
+		if processErr != nil {
+			slog.Warn("ingest: pipeline processing failed", "error", processErr, "batch_size", len(batch))
+			if accepted == 0 && failed == 0 {
+				respondInternalError(w, "ingest processing failed")
+				return false
+			}
+			failed += len(batch)
+			batch = batch[:0]
+
+			return true
+		}
+		if ingestErr := s.engine.IngestContext(r.Context(), processed); ingestErr != nil {
+			if accepted == 0 {
+				if respondIngestError(w, ingestErr) {
+					return false
+				}
+			}
+			failed += len(processed)
+			batch = batch[:0]
+
+			return true
+		}
+
+		accepted += len(processed)
+		batch = batch[:0]
+
+		return true
+	}
+
+	for decoder.More() {
+		var payload receiver.EventPayload
+		if err := decoder.Decode(&payload); err != nil {
+			msg := fmt.Sprintf("invalid JSON: %s", sanitizeErrorMessage(err.Error()))
+			if accepted == 0 && failed == 0 {
+				respondError(w, ErrCodeInvalidJSON, http.StatusBadRequest, msg)
+
+				return
+			}
+
+			writeSummary("Request body contained invalid JSON after earlier events were already accepted.")
+
+			return
+		}
+
+		batch = append(batch, payload.ToEvent())
+		if len(batch) >= batchSize && !flushBatch() {
+			return
+		}
+	}
+
+	endTok, err := decoder.Token()
 	if err != nil {
-		slog.Warn("ingest: pipeline processing failed", "error", err)
-		respondInternalError(w, "ingest processing failed")
+		msg := fmt.Sprintf("invalid JSON: %s", sanitizeErrorMessage(err.Error()))
+		if accepted == 0 && failed == 0 {
+			respondError(w, ErrCodeInvalidJSON, http.StatusBadRequest, msg)
+
+			return
+		}
+
+		writeSummary("Request body ended with invalid JSON after earlier events were already accepted.")
+
+		return
+	}
+	endDelim, ok := endTok.(json.Delim)
+	if !ok || endDelim != ']' {
+		msg := "invalid JSON: expected end of array"
+		if accepted == 0 && failed == 0 {
+			respondError(w, ErrCodeInvalidJSON, http.StatusBadRequest, msg)
+
+			return
+		}
+
+		writeSummary("Request body ended unexpectedly after earlier events were already accepted.")
 
 		return
 	}
 
-	if respondIngestError(w, s.engine.IngestContext(r.Context(), processed)) {
+	if !flushBatch() {
 		return
 	}
 
-	respondData(w, http.StatusOK, map[string]interface{}{
-		"accepted": len(processed),
-		"failed":   0,
-	})
+	var trailing json.RawMessage
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		msg := "invalid JSON: trailing data after array"
+		if err != nil {
+			msg = fmt.Sprintf("invalid JSON: %s", sanitizeErrorMessage(err.Error()))
+		}
+		if accepted == 0 && failed == 0 {
+			respondError(w, ErrCodeInvalidJSON, http.StatusBadRequest, msg)
+
+			return
+		}
+
+		writeSummary("Request body contained trailing data after earlier events were already accepted.")
+
+		return
+	}
+
+	writeSummary("")
 }
 
 func (s *Server) handleIngestRaw(w http.ResponseWriter, r *http.Request) {

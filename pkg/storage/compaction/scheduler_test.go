@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -418,6 +419,67 @@ func TestScheduler_MultipleWorkers(t *testing.T) {
 	}
 
 	sched.Stop()
+}
+
+func TestScheduler_StopDoesNotDrainQueuedJobs(t *testing.T) {
+	c := NewCompactor(testLogger())
+	sched := NewScheduler(c, SchedulerConfig{Workers: 1, RateBytesPerSec: 1 << 30}, testLogger())
+
+	var started atomic.Int32
+	blockCh := make(chan struct{})
+
+	sched.SetExecutor(func(ctx context.Context, job *Job) error {
+		started.Add(1)
+		select {
+		case <-blockCh:
+			return nil
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	})
+
+	sched.Submit(&Job{
+		Plan:     &Plan{OutputLevel: L1},
+		Priority: PriorityL0ToL1,
+		Index:    "main",
+	})
+	sched.Submit(&Job{
+		Plan:     &Plan{OutputLevel: L1},
+		Priority: PriorityMaint,
+		Index:    "main",
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	sched.Start(ctx)
+
+	deadline := time.After(5 * time.Second)
+	for started.Load() != 1 {
+		select {
+		case <-deadline:
+			t.Fatal("timeout waiting for first job to start")
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+
+	cancel()
+
+	stopped := make(chan struct{})
+	go func() {
+		sched.Stop()
+		close(stopped)
+	}()
+
+	select {
+	case <-stopped:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for scheduler stop")
+	}
+
+	close(blockCh)
+
+	if got := started.Load(); got != 1 {
+		t.Fatalf("started jobs: got %d, want 1", got)
+	}
 }
 
 func BenchmarkCompactionThroughput(b *testing.B) {

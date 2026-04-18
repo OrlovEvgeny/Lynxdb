@@ -135,6 +135,7 @@ func BuildProgram(ctx context.Context, prog *spl2.Program, store IndexStore, bat
 		batchSize: batchSize,
 		progCache: vm.NewProgramCache(),
 	}
+	qc.defaultSource = firstConcreteSource(prog)
 
 	// Materialize CTEs using DAG-based execution plan. Independent CTEs
 	// at the same dependency level are materialized in parallel when enabled.
@@ -144,6 +145,29 @@ func BuildProgram(ctx context.Context, prog *spl2.Program, store IndexStore, bat
 
 	// Build main query.
 	return qc.buildQuery(ctx, prog.Main)
+}
+
+// firstConcreteSource walks a program to find the first non-variable Source
+// clause — checking the main query first, then each CTE in declaration order.
+// The result seeds queryContext.defaultSource so that CTEs and subqueries
+// without an explicit FROM can inherit the program's data source instead of
+// scanning nothing.
+func firstConcreteSource(prog *spl2.Program) *spl2.SourceClause {
+	if prog == nil {
+		return nil
+	}
+	if prog.Main != nil && prog.Main.Source != nil && !prog.Main.Source.IsVariable {
+		return prog.Main.Source
+	}
+	for _, ds := range prog.Datasets {
+		if ds.Query == nil || ds.Query.Source == nil {
+			continue
+		}
+		if !ds.Query.Source.IsVariable {
+			return ds.Query.Source
+		}
+	}
+	return nil
 }
 
 // BuildResult wraps the pipeline iterator and optional MemoryCoordinator returned
@@ -162,6 +186,21 @@ type Option func(*queryContext)
 func WithSystemTables(resolver SystemTableResolver) Option {
 	return func(qc *queryContext) {
 		qc.systemTableResolver = resolver
+	}
+}
+
+// WithDefaultSource pre-seeds the fallback source for queries that lack an
+// explicit FROM clause (e.g., CTEs and subqueries in pipe mode). Ignored when
+// the program itself contains a concrete source — an explicit FROM always
+// wins over this default.
+func WithDefaultSource(index string) Option {
+	return func(qc *queryContext) {
+		if index == "" {
+			return
+		}
+		if qc.defaultSource == nil {
+			qc.defaultSource = &spl2.SourceClause{Index: index}
+		}
 	}
 }
 
@@ -199,6 +238,11 @@ func BuildProgramWithGovernor(ctx context.Context, prog *spl2.Program, store Ind
 	if parallelCfg != nil {
 		qc.parallelCfg = *parallelCfg
 	}
+
+	// Pre-seed defaultSource from the program before options apply, so
+	// WithDefaultSource serves only as a fallback when the program itself
+	// has no concrete FROM.
+	qc.defaultSource = firstConcreteSource(prog)
 
 	for _, opt := range opts {
 		opt(qc)
@@ -273,6 +317,14 @@ func (qc *queryContext) buildQuery(ctx context.Context, query *spl2.Query) (Iter
 			if qc.defaultSource == nil {
 				qc.defaultSource = query.Source
 			}
+		}
+	} else if qc.defaultSource != nil {
+		// Query has no explicit FROM (CTE body or subquery) — inherit the
+		// program's data source so filters apply to the same events the
+		// parent query sees, instead of an empty iterator.
+		iter, err = qc.buildSourceIterator(qc.defaultSource)
+		if err != nil {
+			return nil, err
 		}
 	} else {
 		iter = NewScanIteratorWithBudget(nil, qc.batchSize, qc.newAccount("scan"))

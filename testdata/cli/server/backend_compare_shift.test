@@ -1,3 +1,2 @@
 # format: json
-# skip: compare syntax not yet finalized
-FROM idx_backend | compare previous 1h | head 5
+FROM backend | compare previous -1h | head 5

@@ -1,3 +1,2 @@
 # format: json
-# skip: rollup syntax not yet finalized
-FROM idx_backend | rollup field=duration_ms span=1h | head 10
+FROM backend | rollup 1h, 15m | head 10

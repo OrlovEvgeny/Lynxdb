@@ -354,7 +354,7 @@ func (e *Engine) Query(ctx context.Context, spl2Query string, opts QueryOpts) (*
 		}
 	}()
 
-	buildResult, err := pipeline.BuildProgramWithGovernor(ctx, prog, store, nil, nil, 0, "", gov, limit, spillMgr, false, nil)
+	buildResult, err := pipeline.BuildProgramWithGovernor(ctx, prog, store, nil, nil, 0, "", gov, limit, spillMgr, false, nil, pipeline.WithDefaultSource(defaultIndex))
 	if err != nil {
 		return nil, nil, fmt.Errorf("build pipeline: %w", err)
 	}
@@ -705,7 +705,7 @@ func (e *Engine) QueryReader(ctx context.Context, r io.Reader, spl2Query string,
 		}
 	}()
 
-	buildResult, err := pipeline.BuildProgramWithGovernor(ctx, prog, store, nil, nil, 0, "", qrGov, ephLimit, qrSpillMgr, false, nil)
+	buildResult, err := pipeline.BuildProgramWithGovernor(ctx, prog, store, nil, nil, 0, "", qrGov, ephLimit, qrSpillMgr, false, nil, pipeline.WithDefaultSource(idx))
 	if err != nil {
 		return nil, nil, fmt.Errorf("build pipeline: %w", err)
 	}

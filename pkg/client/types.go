@@ -131,6 +131,7 @@ const (
 	ResultTypeEvents    QueryResultType = "events"
 	ResultTypeAggregate QueryResultType = "aggregate"
 	ResultTypeTimechart QueryResultType = "timechart"
+	ResultTypeSchema    QueryResultType = "schema"
 	ResultTypeJob       QueryResultType = "job"
 )
 

@@ -204,11 +204,12 @@ func (e *Engine) initDiskPersistence(ctx context.Context) error {
 	return nil
 }
 
-// loadPartAsSegment opens a part file via mmap and adds it to the query-visible segment list.
-func (e *Engine) loadPartAsSegment(meta *part.Meta) error {
+// openPartSegmentHandle opens a part file via mmap and builds a query-visible
+// segment handle for it without publishing it into the current epoch.
+func (e *Engine) openPartSegmentHandle(meta *part.Meta) (*segmentHandle, error) {
 	ms, err := segment.OpenSegmentFile(meta.Path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var bf *index.BloomFilter
@@ -227,7 +228,7 @@ func (e *Engine) loadPartAsSegment(meta *part.Meta) error {
 		ms.Reader().SetColumnCache(e.projectionCache, meta.ID)
 	}
 
-	sh := &segmentHandle{
+	return &segmentHandle{
 		reader: ms.Reader(),
 		mmap:   ms,
 		meta: model.SegmentMeta{
@@ -248,6 +249,14 @@ func (e *Engine) loadPartAsSegment(meta *part.Meta) error {
 		index:       meta.Index,
 		bloom:       bf,
 		invertedIdx: ii,
+	}, nil
+}
+
+// loadPartAsSegment opens a part file via mmap and adds it to the query-visible segment list.
+func (e *Engine) loadPartAsSegment(meta *part.Meta) error {
+	sh, err := e.openPartSegmentHandle(meta)
+	if err != nil {
+		return err
 	}
 
 	e.mu.Lock()

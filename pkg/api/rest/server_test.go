@@ -20,10 +20,47 @@ func startTestServer(t *testing.T) (*Server, func()) {
 	t.Helper()
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	queryCfg := config.QueryConfig{SpillDir: t.TempDir()}
 	srv, err := NewServer(Config{
 		Addr:   "127.0.0.1:0",
 		Logger: logger,
-		Query:  config.QueryConfig{SpillDir: t.TempDir()},
+		Query:  queryCfg,
+	})
+	if err != nil {
+		t.Fatalf("NewServer: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go srv.Start(ctx)
+	srv.WaitReady()
+
+	return srv, func() {
+		cancel()
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
+func startTestServerWithConfig(t *testing.T, cfg Config) (*Server, func()) {
+	t.Helper()
+
+	logger := cfg.Logger
+	if logger == nil {
+		logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	}
+	queryCfg := cfg.Query
+	if queryCfg.SpillDir == "" {
+		queryCfg.SpillDir = t.TempDir()
+	}
+
+	srv, err := NewServer(Config{
+		Addr:    "127.0.0.1:0",
+		DataDir: cfg.DataDir,
+		Storage: cfg.Storage,
+		Logger:  logger,
+		Query:   queryCfg,
+		Ingest:  cfg.Ingest,
+		Server:  cfg.Server,
+		Views:   cfg.Views,
 	})
 	if err != nil {
 		t.Fatalf("NewServer: %v", err)
@@ -193,6 +230,44 @@ func TestServer_IngestAndQuery(t *testing.T) {
 	}
 	if _, ok := meta["query_id"]; !ok {
 		t.Error("missing query_id in meta")
+	}
+}
+
+func TestServer_IngestJSONArray_PartialSuccessOnMalformedTail(t *testing.T) {
+	srv, cleanup := startTestServerWithConfig(t, Config{
+		Ingest: config.IngestConfig{
+			MaxBatchSize: 1,
+		},
+	})
+	defer cleanup()
+
+	body := `[{"event":"line one","index":"main"},{"event":"line two","index":"main"},`
+	resp, err := http.Post(fmt.Sprintf("http://%s/api/v1/ingest", srv.Addr()), "application/json", bytes.NewBufferString(body))
+	if err != nil {
+		t.Fatalf("POST ingest: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		raw, _ := io.ReadAll(resp.Body)
+		t.Fatalf("status: got %d, want 200, body: %s", resp.StatusCode, string(raw))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+
+	data := result["data"].(map[string]interface{})
+	if got := int(data["accepted"].(float64)); got != 2 {
+		t.Fatalf("accepted: got %d, want 2", got)
+	}
+	if warning, ok := data["warning"].(string); !ok || warning == "" {
+		t.Fatalf("expected warning on partial success, got %v", data["warning"])
+	}
+
+	if got := queryEventCount(t, srv.Addr(), `{"q":"FROM main"}`); got != 2 {
+		t.Fatalf("query count: got %d, want 2", got)
 	}
 }
 

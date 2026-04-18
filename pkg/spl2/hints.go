@@ -105,12 +105,75 @@ type InPredicate struct {
 }
 
 // ExtractQueryHints walks the AST of a Program and extracts optimization hints.
+// RequiredCols are unioned across the main query, all CTE bodies, and all
+// subqueries (JOIN, APPEND, MULTISEARCH) so the segment scanner loads every
+// column any part of the program may read.
 func ExtractQueryHints(prog *Program) *QueryHints {
 	if prog == nil || prog.Main == nil {
 		return &QueryHints{}
 	}
 
-	return extractQueryHintsFromQuery(prog.Main)
+	h := extractQueryHintsFromQuery(prog.Main)
+	if h.RequiredCols == nil {
+		// nil means "all columns needed" — leave as-is; CTE additions can't narrow.
+		return h
+	}
+
+	seen := make(map[string]bool, len(h.RequiredCols))
+	for _, c := range h.RequiredCols {
+		seen[c] = true
+	}
+	addAll := func(extra []string) bool {
+		if extra == nil {
+			return true // downstream wants every column
+		}
+		for _, c := range extra {
+			if !seen[c] {
+				seen[c] = true
+				h.RequiredCols = append(h.RequiredCols, c)
+			}
+		}
+		return false
+	}
+	var walkSubqueries func(q *Query) bool
+	walkSubqueries = func(q *Query) bool {
+		if q == nil {
+			return false
+		}
+		if addAll(GetRequiredColumns(q)) {
+			return true
+		}
+		for _, cmd := range q.Commands {
+			switch c := cmd.(type) {
+			case *JoinCommand:
+				if walkSubqueries(c.Subquery) {
+					return true
+				}
+			case *AppendCommand:
+				if walkSubqueries(c.Subquery) {
+					return true
+				}
+			case *MultisearchCommand:
+				for _, sub := range c.Searches {
+					if walkSubqueries(sub) {
+						return true
+					}
+				}
+			}
+		}
+		return false
+	}
+	if walkSubqueries(prog.Main) {
+		h.RequiredCols = nil
+		return h
+	}
+	for _, ds := range prog.Datasets {
+		if walkSubqueries(ds.Query) {
+			h.RequiredCols = nil
+			return h
+		}
+	}
+	return h
 }
 
 func extractQueryHintsFromQuery(q *Query) *QueryHints {

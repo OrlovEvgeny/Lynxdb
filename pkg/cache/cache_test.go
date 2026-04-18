@@ -23,6 +23,7 @@ func TestKeyUniqueness(t *testing.T) {
 		{IndexName: "idx2", SegmentID: "seg1", QueryHash: 1},                            // different index
 		{IndexName: "idx1", SegmentID: "seg2", QueryHash: 1},                            // different segment
 		{IndexName: "idx1", SegmentID: "seg1", QueryHash: 2},                            // different query
+		{IndexName: "idx1", SegmentID: "seg1", QueryHash: 1, Generation: 2},             // different generation
 		{IndexName: "idx1", SegmentID: "seg1", QueryHash: 1, TimeRange: [2]int64{1, 2}}, // different time
 	}
 	seen := make(map[string]bool)
@@ -32,6 +33,14 @@ func TestKeyUniqueness(t *testing.T) {
 			t.Errorf("duplicate key: %s", hex)
 		}
 		seen[hex] = true
+	}
+}
+
+func TestKeyGenerationAffectsKey(t *testing.T) {
+	k1 := Key{IndexName: "idx", SegmentID: "seg1", QueryHash: 42, Generation: 1}
+	k2 := Key{IndexName: "idx", SegmentID: "seg1", QueryHash: 42, Generation: 2}
+	if k1.Hex() == k2.Hex() {
+		t.Fatalf("different generations should produce different keys: %s", k1.Hex())
 	}
 }
 

@@ -71,6 +71,9 @@ func TestESBulk_BasicIndex(t *testing.T) {
 		if item.Index.ID == "" {
 			t.Fatalf("item %d: empty _id", i)
 		}
+		if item.Index.Result != "created" {
+			t.Fatalf("item %d: result = %q, want created", i, item.Index.Result)
+		}
 	}
 
 	// Verify events are queryable.
@@ -102,6 +105,9 @@ func TestESBulk_CreateAction(t *testing.T) {
 	}
 	if result.Items[0].Create.Status != 201 {
 		t.Fatalf("status: %d", result.Items[0].Create.Status)
+	}
+	if result.Items[0].Create.Result != "created" {
+		t.Fatalf("result: got %q, want created", result.Items[0].Create.Result)
 	}
 }
 

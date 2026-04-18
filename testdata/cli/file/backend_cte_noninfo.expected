@@ -1,1 +1,3 @@
-
+{"level":"ERROR","n":5,"service":"payment-service"}
+{"level":"WARN","n":5,"service":"gateway-service"}
+{"level":"WARN","n":1,"service":"deploy-service"}

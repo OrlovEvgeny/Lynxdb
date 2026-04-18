@@ -2,7 +2,6 @@ package rest
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/lynxbase/lynxdb/pkg/ingest/receiver"
@@ -15,15 +14,8 @@ func (s *Server) handleOTLPLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := io.ReadAll(io.LimitReader(r.Body, 10<<20))
-	if err != nil {
-		respondError(w, ErrCodeInvalidJSON, http.StatusBadRequest, "failed to read body")
-
-		return
-	}
-
 	var req receiver.OTLPLogsRequest
-	if err := json.Unmarshal(body, &req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondError(w, ErrCodeInvalidJSON, http.StatusBadRequest, "invalid JSON: "+err.Error())
 
 		return

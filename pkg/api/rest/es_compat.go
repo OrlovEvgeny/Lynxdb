@@ -104,6 +104,7 @@ type esBulkItemStatus struct {
 	ID     string           `json:"_id"`
 	Index  string           `json:"_index"`
 	Status int              `json:"status"`
+	Result string           `json:"result,omitempty"`
 	Error  *esBulkItemError `json:"error,omitempty"`
 }
 
@@ -307,7 +308,7 @@ func (s *Server) handleESBulk(w http.ResponseWriter, r *http.Request) {
 		if len(batch) == 0 {
 			return
 		}
-			if err := processESBatch(r.Context(), pipe, batch, s); err != nil {
+		if err := processESBatch(r.Context(), pipe, batch, s); err != nil {
 			for _, p := range pending {
 				items[p.itemIdx] = makeErrorItem(p.action, p.index, p.docID,
 					http.StatusInternalServerError, "ingest_exception", err.Error())
@@ -431,6 +432,7 @@ func makeSuccessItem(action, index, id string) esBulkItemResult {
 		ID:     id,
 		Index:  index,
 		Status: http.StatusCreated,
+		Result: "created",
 	}
 	switch action {
 	case "create":

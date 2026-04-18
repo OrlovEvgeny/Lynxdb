@@ -18,26 +18,48 @@ import (
 )
 
 // Pooled ZSTD encoder/decoder to avoid ~1ms + ~1MB allocation per call.
-var zstdEncoderPool = sync.Pool{
-	New: func() interface{} {
-		enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedDefault))
-		if err != nil {
-			panic(fmt.Sprintf("segment: zstd encoder init: %v", err))
-		}
+// Pools are populated lazily via explicit accessors so init failures surface
+// as ordinary errors instead of process-wide panics.
+var zstdEncoderPool sync.Pool
 
-		return enc
-	},
+var zstdDecoderPool sync.Pool
+
+func getZSTDEncoder() (*zstd.Encoder, error) {
+	if enc, ok := zstdEncoderPool.Get().(*zstd.Encoder); ok && enc != nil {
+		return enc, nil
+	}
+
+	enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedDefault))
+	if err != nil {
+		return nil, fmt.Errorf("segment: zstd encoder init: %w", err)
+	}
+
+	return enc, nil
 }
 
-var zstdDecoderPool = sync.Pool{
-	New: func() interface{} {
-		dec, err := zstd.NewReader(nil)
-		if err != nil {
-			panic(fmt.Sprintf("segment: zstd decoder init: %v", err))
-		}
+func putZSTDEncoder(enc *zstd.Encoder) {
+	if enc != nil {
+		zstdEncoderPool.Put(enc)
+	}
+}
 
-		return dec
-	},
+func getZSTDDecoder() (*zstd.Decoder, error) {
+	if dec, ok := zstdDecoderPool.Get().(*zstd.Decoder); ok && dec != nil {
+		return dec, nil
+	}
+
+	dec, err := zstd.NewReader(nil)
+	if err != nil {
+		return nil, fmt.Errorf("segment: zstd decoder init: %w", err)
+	}
+
+	return dec, nil
+}
+
+func putZSTDDecoder(dec *zstd.Decoder) {
+	if dec != nil {
+		zstdDecoderPool.Put(dec)
+	}
 }
 
 // countingWriter wraps an io.Writer and tracks total bytes written.
@@ -885,9 +907,13 @@ func decompressLZ4Block(data []byte) ([]byte, error) {
 // compressZSTDBlock applies ZSTD block compression. Returns nil if not beneficial.
 // Format: [4B uncompressed size LE][ZSTD data].
 func compressZSTDBlock(data []byte) []byte {
-	enc := zstdEncoderPool.Get().(*zstd.Encoder)
+	enc, err := getZSTDEncoder()
+	if err != nil {
+		return nil
+	}
+	defer putZSTDEncoder(enc)
+
 	compressed := enc.EncodeAll(data, make([]byte, 4, 4+len(data)))
-	zstdEncoderPool.Put(enc)
 	if len(compressed)-4 >= len(data) {
 		return nil // no savings
 	}
@@ -902,9 +928,13 @@ func decompressZSTDBlock(data []byte) ([]byte, error) {
 		return nil, fmt.Errorf("segment: zstd block too short")
 	}
 	uncompSize := binary.LittleEndian.Uint32(data[0:4])
-	dec := zstdDecoderPool.Get().(*zstd.Decoder)
+	dec, err := getZSTDDecoder()
+	if err != nil {
+		return nil, err
+	}
+	defer putZSTDDecoder(dec)
+
 	out, err := dec.DecodeAll(data[4:], make([]byte, 0, uncompSize))
-	zstdDecoderPool.Put(dec)
 	if err != nil {
 		return nil, fmt.Errorf("segment: zstd decompress: %w", err)
 	}

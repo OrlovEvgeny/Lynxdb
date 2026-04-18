@@ -602,7 +602,7 @@ func (a *AggregateIterator) updateState(s *aggState, fn string, val event.Value)
 		if !val.IsNull() {
 			s.last = val
 		}
-	case aggPerc50, aggPerc75, aggPerc90, aggPerc95, aggPerc99:
+	case aggPerc25, aggPerc50, aggPerc75, aggPerc90, aggPerc95, aggPerc99:
 		if f, ok := vm.ValueToFloat(val); ok {
 			if s.tdigest == nil {
 				s.tdigest = NewTDigest(defaultTDigestCompression)

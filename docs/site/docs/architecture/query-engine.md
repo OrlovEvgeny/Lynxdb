@@ -1,7 +1,7 @@
 ---
 sidebar_position: 4
 title: Query Engine
-description: LynxDB query engine internals -- recursive descent SPL2 parser, 23-rule optimizer, Volcano iterator pipeline with 18 operators, and zero-allocation bytecode VM.
+description: LynxDB query engine internals -- recursive descent SPL2 parser, rule-based optimizer, Volcano iterator pipeline with 18 operators, and zero-allocation bytecode VM.
 ---
 
 # Query Engine
@@ -67,7 +67,7 @@ The search predicate parser handles the first stage of an SPL2 query -- the impl
 
 ## Optimizer
 
-The optimizer transforms the AST to reduce work at execution time. It applies 23 rules in 6 ordered phases.
+The optimizer transforms the AST to reduce work at execution time. The current implementation applies 40 rules in 6 ordered phases.
 
 ### Phase 1: Expression Simplification
 
@@ -144,7 +144,7 @@ Aggregate (global merge)
   ↑ Next()
 Filter (WHERE status>=500)
   ↑ Next()
-Scan (segments + memtable)
+Scan (segments + buffered/in-memory events)
 ```
 
 Each `Next()` call returns a batch of up to 1024 rows. This design has critical advantages for log analytics:
@@ -157,7 +157,7 @@ Each `Next()` call returns a batch of up to 1024 rows. This design has critical 
 
 | Operator | SPL2 Command | Description |
 |----------|-------------|-------------|
-| **Scan** | `FROM`, `SEARCH` | Reads events from segments and memtable. Applies time/bloom/index pruning. |
+| **Scan** | `FROM`, `SEARCH` | Reads events from segments and buffered/in-memory event stores. Applies time/bloom/index pruning. |
 | **Filter** | `WHERE` | Evaluates a boolean predicate via the bytecode VM. |
 | **Project** | `FIELDS`, `TABLE` | Selects a subset of columns. |
 | **Eval** | `EVAL` | Computes new fields using the bytecode VM. |

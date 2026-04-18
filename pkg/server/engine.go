@@ -121,6 +121,12 @@ type Engine struct {
 	// Compaction consecutive failure tracker (per-index).
 	compactionFailures *compactionFailureTracker
 
+	// Background compaction and tiering lifecycle.
+	compactionCancel context.CancelFunc
+	compactionWG     sync.WaitGroup
+	tieringCancel    context.CancelFunc
+	tieringWG        sync.WaitGroup
+
 	// Deletion pacer: rate-limits file deletion to avoid SSD TRIM spikes (nil when dataDir=="").
 	deletionPacer       *compaction.DeletionPacer
 	deletionPacerCancel context.CancelFunc
@@ -389,8 +395,13 @@ func (e *Engine) Start(ctx context.Context) error {
 		e.deletionPacerCancel = dpCancel
 		go e.deletionPacer.DrainLoop(dpCtx)
 
-		e.startCompaction(ctx)
-		e.startTiering(ctx)
+		compactionCtx, compactionCancel := context.WithCancel(ctx)
+		e.compactionCancel = compactionCancel
+		e.startCompaction(compactionCtx)
+
+		tieringCtx, tieringCancel := context.WithCancel(ctx)
+		e.tieringCancel = tieringCancel
+		e.startTiering(tieringCtx)
 	}
 
 	return nil
@@ -410,6 +421,17 @@ func (e *Engine) Shutdown(timeout time.Duration) error {
 		timeout = 30 * time.Second
 	}
 	var errs []error
+
+	// Stop background persistence loops explicitly so shutdown does not depend
+	// on the caller cancelling the Start(ctx) parent context.
+	if err := waitForBackgroundLoop("compaction", e.compactionCancel, &e.compactionWG, timeout); err != nil {
+		e.logger.Error("shutdown compaction stop failed", "error", err)
+		errs = append(errs, err)
+	}
+	if err := waitForBackgroundLoop("tiering", e.tieringCancel, &e.tieringWG, timeout); err != nil {
+		e.logger.Error("shutdown tiering stop failed", "error", err)
+		errs = append(errs, err)
+	}
 
 	// Flush remaining buffered events via the async batcher.
 	if e.batcher != nil {
@@ -477,6 +499,28 @@ func (e *Engine) Shutdown(timeout time.Duration) error {
 	}
 
 	return errors.Join(errs...)
+}
+
+func waitForBackgroundLoop(name string, cancel context.CancelFunc, wg *sync.WaitGroup, timeout time.Duration) error {
+	if cancel != nil {
+		cancel()
+	}
+	if wg == nil {
+		return nil
+	}
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case <-time.After(timeout):
+		return fmt.Errorf("shutdown %s: timed out after %s", name, timeout)
+	}
 }
 
 // SetIndexStore sets an external IndexStore for full SPL2 queries.

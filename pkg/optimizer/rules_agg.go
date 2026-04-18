@@ -21,9 +21,17 @@ func (r *countStarOptimizationRule) Apply(q *spl2.Query) (*spl2.Query, bool) {
 			return q, false
 		}
 	}
+	// Metadata-only count is valid for concrete sources only. For CTE-variable
+	// sources (FROM $var), the row set is the CTE's filtered output — not the
+	// underlying segments — so counting segment metadata would over-count.
+	if q.Source != nil && q.Source.IsVariable {
+		return q, false
+	}
 	// Detect: pipeline is just "stats count" with no preceding filter or group-by.
 	// The preceding commands must be only SearchCommand with no filter (i.e., search *)
-	// or no commands at all before stats.
+	// or no commands at all before stats. The stats command must also be the final
+	// command — a trailing APPEND, JOIN, or other downstream op means the shortcut
+	// would skip those branches entirely.
 	statsIdx := -1
 	for i, cmd := range q.Commands {
 		if _, ok := cmd.(*spl2.StatsCommand); ok {
@@ -31,6 +39,9 @@ func (r *countStarOptimizationRule) Apply(q *spl2.Query) (*spl2.Query, bool) {
 		}
 	}
 	if statsIdx < 0 {
+		return q, false
+	}
+	if statsIdx != len(q.Commands)-1 {
 		return q, false
 	}
 	stats := q.Commands[statsIdx].(*spl2.StatsCommand)
@@ -93,6 +104,17 @@ func (r *aggregationPushdownRule) Apply(q *spl2.Query) (*spl2.Query, bool) {
 	stats, ok := q.Commands[statsIdx].(*spl2.StatsCommand)
 	if !ok {
 		return q, false
+	}
+	// Post-stats APPEND/JOIN/MULTISEARCH subqueries need access to the original
+	// store to reach other indexes. The partial-agg pipeline replaces the store
+	// with a synthetic `_partial` index for post-stats execution, which strips
+	// those indexes — emitting wrong results. Skip the rule when such subqueries
+	// follow STATS.
+	for i := statsIdx + 1; i < len(q.Commands); i++ {
+		switch q.Commands[i].(type) {
+		case *spl2.AppendCommand, *spl2.JoinCommand, *spl2.MultisearchCommand:
+			return q, false
+		}
 	}
 
 	// All aggs must be pushable with no nested eval.
@@ -193,6 +215,14 @@ func (r *transformAggPushdownRule) Apply(q *spl2.Query) (*spl2.Query, bool) {
 	// Verify all commands before STATS are stateless, per-row transforms.
 	for i := 0; i < statsIdx; i++ {
 		if !isStreamableTransform(q.Commands[i]) {
+			return q, false
+		}
+	}
+	// Post-stats APPEND/JOIN/MULTISEARCH subqueries need the original store to
+	// reach other indexes. See aggregationPushdownRule for the same reasoning.
+	for i := statsIdx + 1; i < len(q.Commands); i++ {
+		switch q.Commands[i].(type) {
+		case *spl2.AppendCommand, *spl2.JoinCommand, *spl2.MultisearchCommand:
 			return q, false
 		}
 	}

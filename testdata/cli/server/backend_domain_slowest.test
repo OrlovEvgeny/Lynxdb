@@ -1,3 +1,2 @@
 # format: json
-# skip: slowest syntax not yet finalized
-FROM idx_backend | slowest 5 duration_ms by service
+FROM backend | slowest 5 duration_ms by service

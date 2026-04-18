@@ -42,6 +42,7 @@ type Key struct {
 	SegmentID    string
 	SegmentCRC32 uint32
 	QueryHash    uint64
+	Generation   uint64
 	TimeRange    [2]int64 // [earliest, latest] in nanoseconds
 }
 
@@ -52,9 +53,10 @@ func (k Key) Bytes() []byte {
 	h.Write([]byte{0})
 	h.Write([]byte(k.SegmentID))
 	h.Write([]byte{0})
-	var buf [12]byte
+	var buf [20]byte
 	binary.BigEndian.PutUint32(buf[0:4], k.SegmentCRC32)
 	binary.BigEndian.PutUint64(buf[4:12], k.QueryHash)
+	binary.BigEndian.PutUint64(buf[12:20], k.Generation)
 	h.Write(buf[:])
 	var tbuf [16]byte
 	binary.BigEndian.PutUint64(tbuf[0:8], uint64(k.TimeRange[0]))

@@ -197,6 +197,11 @@ func (w *Writer) Write(ctx context.Context, index string, events []*event.Event,
 
 		return nil, fmt.Errorf("part.Writer.Write: rename: %w", err)
 	}
+	if err := syncDir(partDir); err != nil {
+		os.Remove(finalPath)
+
+		return nil, fmt.Errorf("part.Writer.Write: %w", err)
+	}
 
 	if w.logger != nil {
 		w.logger.Debug("part write complete",

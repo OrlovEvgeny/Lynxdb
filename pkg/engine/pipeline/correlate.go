@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/lynxbase/lynxdb/pkg/event"
+	"github.com/lynxbase/lynxdb/pkg/vm"
 )
 
 // CorrelateIterator is a blocking operator that computes correlation between
@@ -75,29 +76,22 @@ func (c *CorrelateIterator) materialize(ctx context.Context) error {
 	}
 
 	n := len(x)
-	if n < 2 {
-		c.output = BatchFromRows([]map[string]event.Value{
-			{
-				"_correlation": event.FloatValue(math.NaN()),
-				"_method":      event.StringValue(c.method),
-				"_n":           event.IntValue(int64(n)),
-				"_field1":      event.StringValue(c.field1),
-				"_field2":      event.StringValue(c.field2),
-			},
-		})
-		return nil
-	}
-
-	var r float64
-	if c.method == "spearman" {
-		r = spearmanCorrelation(x, y)
-	} else {
-		r = pearsonCorrelation(x, y)
+	corrValue := event.NullValue()
+	if n >= 2 {
+		var r float64
+		if c.method == "spearman" {
+			r = spearmanCorrelation(x, y)
+		} else {
+			r = pearsonCorrelation(x, y)
+		}
+		if !math.IsNaN(r) && !math.IsInf(r, 0) {
+			corrValue = event.FloatValue(r)
+		}
 	}
 
 	c.output = BatchFromRows([]map[string]event.Value{
 		{
-			"_correlation": event.FloatValue(r),
+			"_correlation": corrValue,
 			"_method":      event.StringValue(c.method),
 			"_n":           event.IntValue(int64(n)),
 			"_field1":      event.StringValue(c.field1),
@@ -166,14 +160,9 @@ func getNumeric(col []event.Value, i int) (float64, bool) {
 	if v.IsNull() {
 		return 0, false
 	}
-	switch v.Type() {
-	case event.FieldTypeFloat:
-		return v.AsFloat(), true
-	case event.FieldTypeInt:
-		return float64(v.AsInt()), true
-	default:
-		return 0, false
-	}
+	// ValueToFloat handles int, float, and schema-on-read string columns
+	// that contain numeric values (common with JSON ingest).
+	return vm.ValueToFloat(v)
 }
 
 func (c *CorrelateIterator) Close() error {

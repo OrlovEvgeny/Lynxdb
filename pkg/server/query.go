@@ -273,8 +273,9 @@ func (e *Engine) executeQuery(ctx context.Context, job *SearchJob, params QueryP
 	}
 	gen := e.ingestGen.Load()
 	cacheKey := cache.Key{
-		QueryHash: cache.HashQuery(job.Query) ^ uint64(gen),
-		TimeRange: [2]int64{earliest, latest},
+		QueryHash:  cache.HashQuery(job.Query),
+		Generation: uint64(gen),
+		TimeRange:  [2]int64{earliest, latest},
 	}
 
 	// Check cache.

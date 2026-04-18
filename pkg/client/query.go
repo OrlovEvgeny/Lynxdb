@@ -122,13 +122,13 @@ func (c *Client) parseQueryResult(status int, data json.RawMessage, meta Meta) (
 	result := &QueryResult{Meta: meta}
 
 	switch QueryResultType(typed.Type) {
-	case ResultTypeEvents:
+	case ResultTypeEvents, ResultTypeSchema:
 		var events EventsResult
 		if err := json.Unmarshal(data, &events); err != nil {
 			return nil, fmt.Errorf("lynxdb: decode events result: %w", err)
 		}
 
-		result.Type = ResultTypeEvents
+		result.Type = QueryResultType(typed.Type)
 		result.Events = &events
 	case ResultTypeAggregate, ResultTypeTimechart:
 		var agg AggregateResult

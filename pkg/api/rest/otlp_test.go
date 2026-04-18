@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/lynxbase/lynxdb/pkg/config"
 )
 
 func TestServer_OTLPIngest(t *testing.T) {
@@ -209,5 +212,42 @@ func TestServer_OTLPIngestAndQuery(t *testing.T) {
 
 	if len(events) != 3 {
 		t.Errorf("events: got %d, want 3", len(events))
+	}
+}
+
+func TestServer_OTLPIngest_RespectsConfiguredBodyLimitAbove10MiB(t *testing.T) {
+	srv, cleanup := startTestServerWithConfig(t, Config{
+		DataDir: t.TempDir(),
+		Storage: config.DefaultConfig().Storage,
+		Ingest: config.IngestConfig{
+			MaxBodySize: config.ByteSize(13 << 20),
+		},
+	})
+	defer cleanup()
+
+	largeBody := strings.Repeat("x", 11<<20)
+	payload := fmt.Sprintf(`{
+		"resourceLogs": [{
+			"scopeLogs": [{
+				"logRecords": [{
+					"body": {"stringValue": %q}
+				}]
+			}]
+		}]
+	}`, largeBody)
+
+	resp, err := http.Post(
+		fmt.Sprintf("http://%s/api/v1/otlp/v1/logs", srv.Addr()),
+		"application/json",
+		bytes.NewBufferString(payload),
+	)
+	if err != nil {
+		t.Fatalf("POST: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("status: got %d, want 200, body: %s", resp.StatusCode, string(body))
 	}
 }

@@ -1,0 +1,10 @@
+{"duration_ms":28,"service":"user-service"}
+{"duration_ms":45,"service":"user-service"}
+{"duration_ms":52,"service":"project-service"}
+{"duration_ms":120,"service":"project-service"}
+{"duration_ms":3,"service":"gateway-service"}
+{"duration_ms":2,"service":"gateway-service"}
+{"duration_ms":3,"service":"gateway-service"}
+{"duration_ms":340,"service":"deploy-service"}
+{"duration_ms":5200,"service":"payment-service"}
+{"duration_ms":5100,"service":"payment-service"}

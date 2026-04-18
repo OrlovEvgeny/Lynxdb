@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -97,7 +98,9 @@ func (e *Engine) startCompaction(ctx context.Context) {
 	)
 
 	// Plan-submission goroutine: scans all indexes, produces jobs, submits to scheduler.
+	e.compactionWG.Add(1)
 	go func() {
+		defer e.compactionWG.Done()
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
@@ -450,24 +453,96 @@ func (e *Engine) executeTrivialMove(_ context.Context, idx, partition string, pl
 		}()
 	}
 
-	e.mu.Lock()
-	// Find the segment handle and update its level metadata.
-	for _, sh := range e.currentEpoch.Load().segments {
-		if sh.meta.ID == seg.Meta.ID {
-			sh.meta.Level = plan.OutputLevel
-			break
-		}
+	oldMeta := segmentMetaToPartMeta(seg.Meta)
+	renamedMeta := *oldMeta
+	renamedMeta.Level = plan.OutputLevel
+	renamedMeta.CreatedAt = time.Now()
+	renamedMeta.ID = part.ID(oldMeta.Index, plan.OutputLevel, renamedMeta.CreatedAt)
+	renamedMeta.Path = filepath.Join(filepath.Dir(oldMeta.Path),
+		part.Filename(oldMeta.Index, plan.OutputLevel, renamedMeta.CreatedAt))
+
+	if err := os.Rename(oldMeta.Path, renamedMeta.Path); err != nil {
+		e.logger.Error("trivial move rename failed",
+			"index", idx,
+			"partition", partition,
+			"segment", seg.Meta.ID,
+			"from", oldMeta.Path,
+			"to", renamedMeta.Path,
+			"error", err,
+		)
+
+		return
 	}
+
+	newHandle, err := e.openPartSegmentHandle(&renamedMeta)
+	if err != nil {
+		e.logger.Error("trivial move reopen failed",
+			"index", idx,
+			"partition", partition,
+			"segment", seg.Meta.ID,
+			"path", renamedMeta.Path,
+			"error", err,
+		)
+		if renameErr := os.Rename(renamedMeta.Path, oldMeta.Path); renameErr != nil {
+			e.logger.Error("trivial move rollback failed",
+				"from", renamedMeta.Path,
+				"to", oldMeta.Path,
+				"error", renameErr,
+			)
+		}
+
+		return
+	}
+
+	var oldHandle *segmentHandle
+	e.mu.Lock()
+	current := e.currentEpoch.Load().segments
+	newSegments := make([]*segmentHandle, len(current))
+	for i, sh := range current {
+		if sh.meta.ID != seg.Meta.ID {
+			newSegments[i] = sh
+			continue
+		}
+
+		oldHandle = sh
+		newSegments[i] = newHandle
+	}
+	if oldHandle == nil {
+		e.mu.Unlock()
+		if closeErr := newHandle.mmap.Close(); closeErr != nil {
+			e.logger.Warn("trivial move cleanup close failed", "path", renamedMeta.Path, "error", closeErr)
+		}
+		if renameErr := os.Rename(renamedMeta.Path, oldMeta.Path); renameErr != nil {
+			e.logger.Error("trivial move rollback failed",
+				"from", renamedMeta.Path,
+				"to", oldMeta.Path,
+				"error", renameErr,
+			)
+		}
+
+		return
+	}
+	e.advanceEpoch(newSegments, []*segmentHandle{oldHandle})
 	e.mu.Unlock()
 
 	// Update compactor tracking: remove at old level, re-add at new level.
 	e.compactor.RemoveSegment(seg.Meta.ID)
-	updatedMeta := seg.Meta
-	updatedMeta.Level = plan.OutputLevel
 	e.compactor.AddSegment(&compaction.SegmentInfo{
-		Meta: updatedMeta,
-		Path: seg.Path,
+		Meta: newHandle.meta,
+		Path: renamedMeta.Path,
 	})
+	if e.tierMgr != nil {
+		e.tierMgr.RemoveSegment(seg.Meta.ID)
+		e.tierMgr.AddSegment(newHandle.meta)
+	}
+	if e.partRegistry != nil {
+		e.partRegistry.Remove(seg.Meta.ID)
+		e.partRegistry.Add(&renamedMeta)
+	}
+	e.cache.OnCompaction([]string{seg.Meta.ID}, []string{renamedMeta.ID})
+	if e.projectionCache != nil {
+		e.projectionCache.InvalidateSegment(seg.Meta.ID)
+	}
 
 	e.metrics.CompactionRuns.Add(1)
 	e.metrics.CompactionTrivialMoveCount.Add(1)
@@ -485,7 +560,7 @@ func (e *Engine) executeTrivialMove(_ context.Context, idx, partition string, pl
 
 	// Move manifest from pending to history with lineage info.
 	if trivialManifest != nil && e.manifestStore != nil {
-		trivialManifest.OutputSegmentID = seg.Meta.ID
+		trivialManifest.OutputSegmentID = renamedMeta.ID
 		trivialManifest.CompletedAt = time.Now()
 		if err := e.manifestStore.Complete(trivialManifest); err != nil {
 			e.logger.Warn("failed to complete trivial move manifest", "id", trivialManifest.ID, "error", err)
@@ -495,7 +570,7 @@ func (e *Engine) executeTrivialMove(_ context.Context, idx, partition string, pl
 	e.logger.Info("trivial move complete",
 		"index", idx,
 		"partition", partition,
-		"segment", seg.Meta.ID,
+		"segment", renamedMeta.ID,
 		"new_level", plan.OutputLevel,
 	)
 }
@@ -635,5 +710,22 @@ func partMetaToSegmentMeta(pm *part.Meta) model.SegmentMeta {
 		Columns:      pm.Columns,
 		Tier:         pm.Tier,
 		BloomVersion: 2,
+	}
+}
+
+func segmentMetaToPartMeta(sm model.SegmentMeta) *part.Meta {
+	return &part.Meta{
+		ID:         sm.ID,
+		Index:      sm.Index,
+		Partition:  sm.Partition,
+		MinTime:    sm.MinTime,
+		MaxTime:    sm.MaxTime,
+		EventCount: sm.EventCount,
+		SizeBytes:  sm.SizeBytes,
+		Level:      sm.Level,
+		Path:       sm.Path,
+		CreatedAt:  sm.CreatedAt,
+		Columns:    sm.Columns,
+		Tier:       sm.Tier,
 	}
 }

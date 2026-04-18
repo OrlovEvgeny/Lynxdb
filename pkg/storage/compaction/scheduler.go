@@ -196,7 +196,9 @@ func (s *Scheduler) worker(ctx context.Context, id int) {
 		for s.queue.Len() == 0 && s.running.Load() {
 			s.jobReady.Wait()
 		}
-		if !s.running.Load() && s.queue.Len() == 0 {
+		// Stop is terminal for pending work: once shutdown begins, workers exit
+		// after their current job instead of draining the remaining queue.
+		if !s.running.Load() {
 			s.mu.Unlock()
 
 			return

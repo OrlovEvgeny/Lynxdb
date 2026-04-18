@@ -1,3 +1,2 @@
 # format: json
-# skip: correlate syntax not yet finalized
-FROM idx_backend | correlate duration_ms with cpu_pct method=pearson
+FROM backend | correlate duration_ms cpu_pct method=pearson
