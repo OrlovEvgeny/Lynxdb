@@ -31,7 +31,6 @@ func TestJoin_Prefetch_SameResults(t *testing.T) {
 				t.Fatalf("no-prefetch: %v", err)
 			}
 
-			// Run with prefetch.
 			left2 := NewRowScanIterator(leftRows, DefaultBatchSize)
 			right2 := NewRowScanIterator(rightRows, DefaultBatchSize)
 			acct2 := memgov.NewTestBudget("test", 1<<30).NewAccount("join")

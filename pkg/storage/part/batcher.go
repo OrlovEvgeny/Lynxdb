@@ -202,7 +202,6 @@ func (b *AsyncBatcher) AddContext(ctx context.Context, events []*event.Event) er
 		shard.sizeBytes += int64(len(ev.Raw))
 		shard.lastAdd = time.Now()
 
-		// Check thresholds.
 		if len(shard.events) >= b.cfg.MaxEvents || shard.sizeBytes >= b.cfg.MaxBytes {
 			trigger := "MaxEvents"
 			if shard.sizeBytes >= b.cfg.MaxBytes {

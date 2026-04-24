@@ -240,7 +240,6 @@ func TestKeyStorePersistence(t *testing.T) {
 		t.Error("key should verify after reopen")
 	}
 
-	// Check file permissions.
 	info, err := os.Stat(filepath.Join(dir, "keys.json"))
 	if err != nil {
 		t.Fatal(err)

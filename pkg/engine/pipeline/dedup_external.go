@@ -186,7 +186,6 @@ func (eds *externalDedupSet) containsHash(h uint64) bool {
 		return false
 	}
 
-	// Check in-memory buffer.
 	for _, bh := range eds.buffer {
 		if bh == h {
 			return true
@@ -282,7 +281,6 @@ func (eds *externalDedupSet) flushBuffer() error {
 			}
 		}
 
-		// Build sparse index.
 		if newCount%int64(sparseEvery) == 0 {
 			newSparse = append(newSparse, sparseEntry{
 				offset: newCount * 8,

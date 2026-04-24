@@ -133,7 +133,6 @@ func TestDefaultNoTimeRange(t *testing.T) {
 	}
 }
 
-// Parse tests
 
 func TestParse_Now(t *testing.T) {
 	now := time.Date(2026, 2, 17, 14, 30, 45, 123456789, time.UTC)

@@ -281,9 +281,7 @@ func TestDetectScopeHint_HasPipe(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // DetectLynxFlowHints — cross-syntax migration hints (SPL2 → Lynx Flow)
-// =============================================================================
 
 func TestDetectLynxFlowHints_Eval(t *testing.T) {
 	hints := DetectLynxFlowHints([]Command{&EvalCommand{Field: "x"}})

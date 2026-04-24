@@ -101,7 +101,6 @@ func (e *LZ4Encoder) DecodeStrings(data []byte) ([]string, error) {
 		}
 	}
 
-	// Parse length-prefixed strings.
 	result := make([]string, 0, count)
 	pos := 0
 	for i := uint32(0); i < count; i++ {

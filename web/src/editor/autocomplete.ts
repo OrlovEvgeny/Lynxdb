@@ -12,9 +12,7 @@ import {
   type IndexInfo,
 } from "../api/client";
 
-// ---------------------------------------------------------------------------
 // Completion cache -- module-level, refreshed every 60 s or on first trigger
-// ---------------------------------------------------------------------------
 
 let cachedFields: FieldInfo[] = [];
 let cachedIndexes: IndexInfo[] = [];
@@ -44,9 +42,7 @@ async function ensureCache(): Promise<void> {
   lastFetchTime = now;
 }
 
-// ---------------------------------------------------------------------------
 // Static completion lists
-// ---------------------------------------------------------------------------
 
 const COMMANDS: readonly string[] = [
   "from", "search", "where", "group", "order", "take", "let", "parse",
@@ -114,9 +110,7 @@ const AGG_FUNCTIONS: readonly string[] = [
 const fieldValueCache = new Map<string, { values: Completion[]; fetched: number }>();
 const VALUE_CACHE_TTL_MS = 30_000;
 
-// ---------------------------------------------------------------------------
 // Context detection helpers
-// ---------------------------------------------------------------------------
 
 /** Return the word fragment currently being typed (if any). */
 function currentWord(line: string): { word: string } {
@@ -127,9 +121,7 @@ function currentWord(line: string): { word: string } {
   return { word: "" };
 }
 
-// ---------------------------------------------------------------------------
 // Completion source
-// ---------------------------------------------------------------------------
 
 async function lynxflowCompletion(
   context: CompletionContext,
@@ -278,9 +270,7 @@ async function lynxflowCompletion(
   return null;
 }
 
-// ---------------------------------------------------------------------------
 // Field value fetching with cache
-// ---------------------------------------------------------------------------
 
 async function getFieldValues(fieldName: string): Promise<Completion[]> {
   const cached = fieldValueCache.get(fieldName);
@@ -302,9 +292,7 @@ async function getFieldValues(fieldName: string): Promise<Completion[]> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Public API -- returns a CodeMirror extension
-// ---------------------------------------------------------------------------
 
 export function lynxflowAutocompletion() {
   return autocompletion({

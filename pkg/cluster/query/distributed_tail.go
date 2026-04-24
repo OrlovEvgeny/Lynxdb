@@ -144,7 +144,6 @@ func (m *DistributedTailMerger) streamFromNode(
 			return
 		}
 
-		// Update watermark.
 		if msg.WatermarkNs > 0 {
 			m.watermarks.Update(nodeID, msg.WatermarkNs)
 		}

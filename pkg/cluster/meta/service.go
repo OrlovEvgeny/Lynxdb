@@ -55,7 +55,6 @@ func (s *Service) Handshake(ctx context.Context, req *clusterpb.HandshakeRequest
 		return nil, err
 	}
 
-	// Validate roles.
 	if err := validateRoles(req.Roles); err != nil {
 		return nil, fmt.Errorf("meta.Service.Handshake: %w", err)
 	}

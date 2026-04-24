@@ -129,7 +129,6 @@ func (t *Table) renderTable() string {
 //
 // Example output:
 //
-//	── Row 1 ──────────────────────────
 //	  host:    web-01.prod.example.com
 //	  status:  200
 //	  message: Connection established
@@ -148,7 +147,6 @@ func (t *Table) renderCards() string {
 	}
 
 	for i, row := range t.rows {
-		// Row header: ── Row N ──────...
 		header := fmt.Sprintf(" Row %d ", i+1)
 		remaining := t.termWidth - len(header) - 2 // 2 for leading "──"
 		if remaining < 0 {

@@ -11,7 +11,6 @@ import (
 func TestDeletionPacer_EnqueueAndDrain(t *testing.T) {
 	dir := t.TempDir()
 
-	// Create test files.
 	var paths []string
 	for i := 0; i < 5; i++ {
 		p := filepath.Join(dir, "seg_"+string(rune('a'+i))+".lsg")

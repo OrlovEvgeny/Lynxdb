@@ -270,7 +270,6 @@ func TestSortIterator(t *testing.T) {
 	if len(rows) != 20 {
 		t.Fatalf("expected 20 rows, got %d", len(rows))
 	}
-	// Check descending order
 	for i := 1; i < len(rows); i++ {
 		prev := rows[i-1]["x"].AsInt()
 		curr := rows[i]["x"].AsInt()

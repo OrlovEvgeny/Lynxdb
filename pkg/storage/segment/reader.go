@@ -783,7 +783,6 @@ func (r *Reader) readRowGroupEventsProjected(rgIdx int, rg *RowGroupMeta, need m
 		if !need[bs.name] {
 			continue
 		}
-		// Check const first.
 		if cc := findConstColumn(rg, bs.name); cc != nil {
 			for i := range events {
 				bs.setter(events[i], cc.Value)

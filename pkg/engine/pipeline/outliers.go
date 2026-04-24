@@ -129,7 +129,6 @@ func (o *OutliersIterator) computeOutliers(rows []map[string]event.Value) *Batch
 		scores, isOutlier = o.computeIQR(values)
 	}
 
-	// Build output batch.
 	b := NewBatch(len(rows))
 	for i, row := range rows {
 		row["_outlier"] = event.BoolValue(isOutlier[i])

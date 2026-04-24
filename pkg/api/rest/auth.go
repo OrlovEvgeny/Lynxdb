@@ -48,7 +48,6 @@ func (s *Server) handleCreateKey(w http.ResponseWriter, r *http.Request) {
 		scope = auth.Scope(input.Scope)
 	}
 
-	// Parse expiration.
 	var expiresAt time.Time
 	if input.ExpiresIn != "" && input.ExpiresIn != "never" {
 		dur, err := parseExpiresIn(input.ExpiresIn)

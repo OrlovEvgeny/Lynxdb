@@ -210,7 +210,6 @@ func extractQueryFilterExpr(q *spl2.Query) spl2.Expr {
 		return nil
 	}
 
-	// Build AND conjunction.
 	result := exprs[0]
 	for _, e := range exprs[1:] {
 		result = &spl2.BinaryExpr{Left: result, Op: "and", Right: e}

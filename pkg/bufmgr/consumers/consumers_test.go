@@ -49,9 +49,7 @@ func readFrameData(t *testing.T, frames []*bufmgr.Frame, totalSize int) []byte {
 	return result[:totalSize]
 }
 
-// ---------------------------------------------------------------------------
 // SegmentCacheConsumer tests
-// ---------------------------------------------------------------------------
 
 func TestUnit_SegmentCacheConsumer_PutGet_SmallData_RoundTrips(t *testing.T) {
 	mgr := newTestManager(t, 16)
@@ -387,9 +385,7 @@ func TestConcurrent_SegmentCacheConsumer_PutGet_NoRace(t *testing.T) {
 	wg.Wait()
 }
 
-// ---------------------------------------------------------------------------
 // MemtableFrameWriter tests
-// ---------------------------------------------------------------------------
 
 func TestUnit_MemtableFrameWriter_Append_SmallData_WritesCorrectly(t *testing.T) {
 	mgr := newTestManager(t, 16)
@@ -676,9 +672,7 @@ func TestConcurrent_MemtableFrameWriter_Append_NoRace(t *testing.T) {
 	}
 }
 
-// ---------------------------------------------------------------------------
 // QueryOperatorAllocator tests
-// ---------------------------------------------------------------------------
 
 func TestUnit_QueryOperatorAllocator_AllocFrame_ReturnsPinnedFrame(t *testing.T) {
 	mgr := newTestManager(t, 16)
@@ -849,9 +843,7 @@ func TestConcurrent_QueryOperatorAllocator_AllocAndRelease_NoRace(t *testing.T) 
 	}
 }
 
-// ---------------------------------------------------------------------------
 // FrameHashTable tests
-// ---------------------------------------------------------------------------
 
 func TestUnit_FrameHashTable_PutGet_BasicKeyValue(t *testing.T) {
 	mgr := newTestManager(t, 32)
@@ -1346,9 +1338,7 @@ func TestUnit_FrameHashTable_Put_ManyEntries_SpansMultipleFrames(t *testing.T) {
 	}
 }
 
-// ---------------------------------------------------------------------------
 // Integration: FrameHashTable uses QueryOperatorAllocator
-// ---------------------------------------------------------------------------
 
 func TestIntegration_FrameHashTable_OwnerIsQuery(t *testing.T) {
 	mgr := newTestManager(t, 32)
@@ -1374,9 +1364,7 @@ func TestIntegration_FrameHashTable_OwnerIsQuery(t *testing.T) {
 	}
 }
 
-// ---------------------------------------------------------------------------
 // Integration: SegmentCacheConsumer + QueryOperatorAllocator memory pressure
-// ---------------------------------------------------------------------------
 
 func TestIntegration_SegmentCache_UnderMemoryPressure_QueryAllocSucceeds(t *testing.T) {
 	// Small pool: 8 frames total. Fill it with cache entries (unpinned),

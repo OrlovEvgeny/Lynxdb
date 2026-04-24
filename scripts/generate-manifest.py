@@ -135,14 +135,12 @@ def main():
     parser.add_argument("--output", default="manifest.json", help="Output file path")
     args = parser.parse_args()
 
-    # Parse inputs
     print(f"Generating manifest for {args.version}...")
     checksums = parse_checksums(args.checksums)
     sizes = scan_artifacts(args.artifacts_dir)
 
     print(f"  Found {len(checksums)} checksums, {len(sizes)} artifacts")
 
-    # Build manifest
     manifest = build_manifest(
         version=args.version,
         checksums=checksums,
@@ -151,7 +149,6 @@ def main():
         channel=args.channel,
     )
 
-    # Validate
     warnings = validate_manifest(manifest)
     for w in warnings:
         print(f"  WARNING: {w}", file=sys.stderr)

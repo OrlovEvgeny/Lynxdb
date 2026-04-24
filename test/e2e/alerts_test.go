@@ -16,7 +16,6 @@ func TestE2E_Alerts_CRUD(t *testing.T) {
 	h := NewHarness(t)
 	ctx := context.Background()
 
-	// Create.
 	input := client.AlertInput{
 		Name:     "test-alert",
 		Q:        `FROM main | stats count | WHERE count > 100`,
@@ -55,7 +54,6 @@ func TestE2E_Alerts_CRUD(t *testing.T) {
 		t.Error("created alert not found in ListAlerts")
 	}
 
-	// Get.
 	got, err := h.Client().GetAlert(ctx, alertID)
 	if err != nil {
 		t.Fatalf("GetAlert: %v", err)
@@ -67,7 +65,6 @@ func TestE2E_Alerts_CRUD(t *testing.T) {
 		t.Errorf("get query: got %q, want %q", got.Q, input.Q)
 	}
 
-	// Update.
 	input.Name = "test-alert-updated"
 	input.Q = `FROM main | stats count | WHERE count > 200`
 	updated, err := h.Client().UpdateAlert(ctx, alertID, input)
@@ -90,7 +87,6 @@ func TestE2E_Alerts_CRUD(t *testing.T) {
 		t.Error("expected patched alert to be disabled")
 	}
 
-	// Delete.
 	err = h.Client().DeleteAlert(ctx, alertID)
 	if err != nil {
 		t.Fatalf("DeleteAlert: %v", err)

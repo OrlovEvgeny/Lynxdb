@@ -92,7 +92,6 @@ func TestFieldCatalog_Events(t *testing.T) {
 		}
 	}
 
-	// Check top values.
 	for _, f := range fields {
 		if f.Name == "status" && len(f.TopValues) == 0 {
 			t.Error("expected top values for status")

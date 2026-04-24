@@ -143,7 +143,6 @@ func BuildProgram(ctx context.Context, prog *spl2.Program, store IndexStore, bat
 		return nil, err
 	}
 
-	// Build main query.
 	return qc.buildQuery(ctx, prog.Main)
 }
 

@@ -243,9 +243,7 @@ export async function fetchStatus(): Promise<Record<string, unknown>> {
   return json.data;
 }
 
-// ---------------------------------------------------------------------------
 // Explain (pipeline introspection)
-// ---------------------------------------------------------------------------
 
 export interface PipelineStage {
   command: string;
@@ -315,9 +313,7 @@ export async function fetchExplain(
   return json.data as ExplainResult;
 }
 
-// ---------------------------------------------------------------------------
 // Materialized views
-// ---------------------------------------------------------------------------
 
 export interface ViewSummary {
   name: string;
@@ -347,9 +343,7 @@ export async function fetchViewDetail(name: string): Promise<ViewDetail> {
   return json.data;
 }
 
-// ---------------------------------------------------------------------------
 // Dashboards
-// ---------------------------------------------------------------------------
 
 export interface PanelPosition {
   x: number;
@@ -459,9 +453,7 @@ export async function deleteDashboard(id: string): Promise<void> {
   if (!resp.ok) throw new Error("Failed to delete dashboard");
 }
 
-// ---------------------------------------------------------------------------
 // Re-export streaming types for convenience
-// ---------------------------------------------------------------------------
 
 export type {
   HybridResult,

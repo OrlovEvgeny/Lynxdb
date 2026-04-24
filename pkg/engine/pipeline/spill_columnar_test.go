@@ -43,7 +43,6 @@ func TestColumnarSpillBasicRoundtrip(t *testing.T) {
 
 	t.Logf("after close: bytes written: %d, path: %s", sw.BytesWritten(), sw.Path())
 
-	// Check file size.
 	info, statErr := os.Stat(sw.Path())
 	if statErr != nil {
 		t.Fatal("stat:", statErr)
@@ -613,7 +612,6 @@ func TestColumnarSpillWriteBatch(t *testing.T) {
 	}
 	defer mgr.CleanupAll()
 
-	// Build a batch.
 	srcBatch := NewBatch(20)
 	for i := 0; i < 20; i++ {
 		srcBatch.AddRow(map[string]event.Value{
@@ -899,7 +897,6 @@ func TestColumnarSpillMergerDescending(t *testing.T) {
 		if swErr != nil {
 			t.Fatal(swErr)
 		}
-		// Run 0: 99, 97, 95, ...  Run 1: 98, 96, 94, ...
 		for i := 49; i >= 0; i-- {
 			val := int64(run + i*2)
 			if writeErr := sw.WriteRow(map[string]event.Value{

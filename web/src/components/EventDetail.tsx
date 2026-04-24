@@ -9,9 +9,7 @@ export interface EventDetailInlineProps {
 
 type TabId = "fields" | "json";
 
-// ---------------------------------------------------------------------------
 // Collapsible JSON tree
-// ---------------------------------------------------------------------------
 
 interface JsonNodeProps {
   data: unknown;
@@ -212,9 +210,7 @@ function JsonNode({ data, depth, keyName }: JsonNodeProps): JSX.Element {
   );
 }
 
-// ---------------------------------------------------------------------------
 // Inline event detail accordion (replaces the old slide-out panel)
-// ---------------------------------------------------------------------------
 
 export function EventDetailInline({ event, onFilter }: EventDetailInlineProps) {
   const [tab, setTab] = useState<TabId>("fields");

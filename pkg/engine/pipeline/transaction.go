@@ -121,7 +121,6 @@ func (t *TransactionIterator) materialize(ctx context.Context) error {
 		}
 	}
 
-	// Build transaction rows.
 	for _, key := range groupOrder {
 		g := groups[key]
 		events := g.events

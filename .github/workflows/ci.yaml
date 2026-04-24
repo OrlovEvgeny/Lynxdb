@@ -25,7 +25,6 @@ env:
   GO_VERSION: "1.25.4"
 
 jobs:
-  # ── Build & Vet (fast gate) ───────────────────────────────────────────────
   build:
     name: Build & Vet
     runs-on: ubuntu-latest
@@ -52,7 +51,6 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-  # ── Docs Build ────────────────────────────────────────────────────────────
   docs-build:
     name: Docs Build
     runs-on: ubuntu-latest
@@ -75,7 +73,6 @@ jobs:
         working-directory: docs/site
         run: npm run build
 
-  # ── Unit Tests ─────────────────────────────────────────────────────────────
   test-unit:
     name: Unit Tests
     needs: build
@@ -100,7 +97,6 @@ jobs:
       - name: Run unit tests
         run: go test ./... -count=1 -timeout 120s -race
 
-  # ── E2E Tests ──────────────────────────────────────────────────────────────
   test-e2e:
     name: E2E Tests
     needs: build
@@ -125,7 +121,6 @@ jobs:
       - name: Run E2E tests
         run: go test -tags e2e -count=1 -timeout 180s ./test/e2e/
 
-  # ── CLI Tests ──────────────────────────────────────────────────────────────
   test-cli:
     name: CLI Tests
     needs: build
@@ -153,7 +148,6 @@ jobs:
       - name: Run CLI tests
         run: go test -tags clitest -count=1 -timeout 600s -skip '^TestGolden' ./test/cli/
 
-  # ── Golden Tests (CLI query output regression) ──────────────────────────────
   test-golden:
     name: Golden Tests
     needs: build

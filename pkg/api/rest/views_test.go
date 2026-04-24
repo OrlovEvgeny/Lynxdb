@@ -81,7 +81,6 @@ func TestViews_Backfill(t *testing.T) {
 	srv, _, cleanup := startDiskTestServer(t)
 	defer cleanup()
 
-	// Create a view.
 	createBody, _ := json.Marshal(map[string]interface{}{
 		"name":  "bf_view",
 		"query": "FROM main",
@@ -96,7 +95,6 @@ func TestViews_Backfill(t *testing.T) {
 		t.Fatalf("create status: %d, body: %s", resp.StatusCode, b)
 	}
 
-	// Get backfill status.
 	resp2, err := http.Get(fmt.Sprintf("http://%s/api/v1/views/bf_view/backfill", srv.Addr()))
 	if err != nil {
 		t.Fatal(err)

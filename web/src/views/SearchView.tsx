@@ -159,9 +159,7 @@ let elapsedTimerId: ReturnType<typeof setInterval> | null = null;
 /** Monotonic query counter to discard stale responses (Pitfall 3) */
 let queryGeneration = 0;
 
-// ---------------------------------------------------------------------------
 // Streaming helpers
-// ---------------------------------------------------------------------------
 
 function startElapsedTimer() {
   const startTime = performance.now();
@@ -337,7 +335,6 @@ function runQueryAndRefresh(
   if (activeAbortController) activeAbortController.abort();
   cleanupActiveQuery();
 
-  // Create new AbortController
   const controller = new AbortController();
   activeAbortController = controller;
 
@@ -538,9 +535,7 @@ function handleCancelQuery() {
   cleanupActiveQuery();
 }
 
-// ---------------------------------------------------------------------------
 // Empty state components
-// ---------------------------------------------------------------------------
 
 function EmptyStateInitial() {
   return (
@@ -566,9 +561,7 @@ function EmptyStateNoResults() {
   );
 }
 
-// ---------------------------------------------------------------------------
 // Main component
-// ---------------------------------------------------------------------------
 
 export function SearchView(_props: Props) {
   const tailCleanupRef = useRef<(() => void) | null>(null);
@@ -662,7 +655,6 @@ export function SearchView(_props: Props) {
     page.value = 1; // Reset to page 1 on sort change
     runQueryAndRefresh(newQuery, from.value, to.value, 1, pageSize.value);
 
-    // Update editor content
     const view = getEditorView?.();
     if (view) {
       view.dispatch({
@@ -888,7 +880,6 @@ export function SearchView(_props: Props) {
       if (!q) return;
       paletteQuery.value = null;
       query.value = q;
-      // Update editor content
       const view = getEditorView?.();
       if (view) {
         view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: q } });

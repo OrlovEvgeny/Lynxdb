@@ -5,9 +5,7 @@ import (
 	"testing"
 )
 
-// =============================================================================
 // Spec 01 — Source (FROM / INDEX aliases)
-// =============================================================================
 
 func TestLynxFlow_FromBasic(t *testing.T) {
 	q, err := Parse(`from nginx | stats count()`)
@@ -75,9 +73,7 @@ func TestLynxFlow_FromView(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 02 — Parsing (parse command, explode)
-// =============================================================================
 
 func TestLynxFlow_ParseJSON(t *testing.T) {
 	q, err := Parse(`from nginx | parse json(_raw)`)
@@ -217,9 +213,7 @@ func TestLynxFlow_ExplodeWithAlias(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 03 — Derivation (let)
-// =============================================================================
 
 func TestLynxFlow_LetSingle(t *testing.T) {
 	q, err := Parse(`from app | let x = y + 1`)
@@ -271,9 +265,7 @@ func TestLynxFlow_LetWithCoalesce(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 04 — Filtering (where)
-// =============================================================================
 
 func TestLynxFlow_WhereBasic(t *testing.T) {
 	q, err := Parse(`from app | where status >= 500`)
@@ -408,9 +400,7 @@ func TestLynxFlow_WhereBetween(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 05 — Field Shaping (keep, omit, select, rename)
-// =============================================================================
 
 func TestLynxFlow_Keep(t *testing.T) {
 	q, err := Parse(`from app | keep f1, f2, f3`)
@@ -491,9 +481,7 @@ func TestLynxFlow_Rename(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 06 — Aggregation (group, every, bucket)
-// =============================================================================
 
 func TestLynxFlow_GroupByCompute(t *testing.T) {
 	q, err := Parse(`from app | group by service compute count() as total`)
@@ -597,9 +585,7 @@ func TestLynxFlow_Bucket(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 07 — Ranking & Order (order by, take, rank, top, topby, bottom, bottomby, rare, dedup)
-// =============================================================================
 
 func TestLynxFlow_OrderBy(t *testing.T) {
 	q, err := Parse(`from app | order by dur desc`)
@@ -864,9 +850,7 @@ func TestLynxFlow_DedupN(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 08 — Combining (join, lookup, append, multisearch, transaction)
-// =============================================================================
 
 func TestLynxFlow_JoinInner(t *testing.T) {
 	q, err := Parse(`from app | join type=inner host [from logs | stats count() by host]`)
@@ -936,9 +920,7 @@ func TestLynxFlow_Transaction(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 09 — Window Ops (running, enrich)
-// =============================================================================
 
 func TestLynxFlow_Running(t *testing.T) {
 	q, err := Parse(`from app | running count() as n`)
@@ -993,9 +975,7 @@ func TestLynxFlow_EnrichByGroup(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 10 — Null Handling (fillnull, ??, ?)
-// =============================================================================
 
 func TestLynxFlow_Fillnull(t *testing.T) {
 	q, err := Parse(`from app | fillnull value="N/A" f1, f2`)
@@ -1050,9 +1030,7 @@ func TestLynxFlow_ExistenceOperator(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 11 — Presentation (table, xyseries, pack)
-// =============================================================================
 
 func TestLynxFlow_Table(t *testing.T) {
 	q, err := Parse(`from app | table f1, f2`)
@@ -1113,9 +1091,7 @@ func TestLynxFlow_PackInto(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 12 — Domain Sugar (latency, errors, rate, percentiles, slowest)
-// =============================================================================
 
 func TestLynxFlow_Latency(t *testing.T) {
 	q, err := Parse(`from app | latency dur every 5m by svc`)
@@ -1323,9 +1299,7 @@ func TestLynxFlow_SlowestDefault(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 13 — Views & CTEs
-// =============================================================================
 
 func TestLynxFlow_Materialize(t *testing.T) {
 	q, err := Parse(`from app | stats count() by service | materialize "mv_errors" retention=90d`)
@@ -1392,9 +1366,7 @@ func TestLynxFlow_CTE(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 14 — Expression Extensions (%, ??, ?, between, is null)
-// =============================================================================
 
 func TestLynxFlow_ModuloOperator(t *testing.T) {
 	q, err := Parse(`from app | let x = y % 10`)
@@ -1474,9 +1446,7 @@ func TestLynxFlow_ExistenceNotConsumeDoubleQuestion(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Lexer Tests
-// =============================================================================
 
 func TestLynxFlow_LexerDoubleQuestion(t *testing.T) {
 	tokens, err := NewLexer("a ?? b").Tokenize()
@@ -1611,9 +1581,7 @@ func TestLynxFlow_LexerKeywordsAsTokens(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Equivalence Tests — Lynx Flow and SPL2 produce identical AST structure
-// =============================================================================
 
 func TestLynxFlow_Equiv_KeepIsFields(t *testing.T) {
 	lf, err := Parse(`from app | keep f1, f2`)
@@ -1768,9 +1736,7 @@ func TestLynxFlow_Equiv_ExplodeIsUnroll(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Error Tests
-// =============================================================================
 
 func TestLynxFlow_Error_ParseUnknownFormat(t *testing.T) {
 	_, err := Parse(`from app | parse foobar(_raw)`)
@@ -1847,9 +1813,7 @@ func TestLynxFlow_Error_LatencyMissingEvery(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Keyword-as-Field-Name Tests
-// =============================================================================
 
 func TestLynxFlow_KeywordAsFieldInWhere(t *testing.T) {
 	// "order" is a keyword but should work as a field name in expressions.
@@ -1905,9 +1869,7 @@ func TestLynxFlow_BucketAsAlias(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Pipeline Tests — Multi-command Lynx Flow queries
-// =============================================================================
 
 func TestLynxFlow_Pipeline_Full(t *testing.T) {
 	input := `from nginx | parse json(_raw) | where status >= 500 | group by service compute count() as errors | order by errors desc | take 10`
@@ -1960,9 +1922,7 @@ func TestLynxFlow_Pipeline_DomainSugarMultiCmd(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Normalize Tests — Lynx Flow commands recognized by normalizer
-// =============================================================================
 
 func TestLynxFlow_NormalizeKnownCommands(t *testing.T) {
 	// All Lynx Flow commands should be in the knownCommands list.
@@ -1980,9 +1940,7 @@ func TestLynxFlow_NormalizeKnownCommands(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Bare Expression as Implicit Where (Spec 04 — Accepted alias)
-// =============================================================================
 
 func TestLynxFlow_BareExprSimple(t *testing.T) {
 	q, err := Parse(`from nginx | status >= 500`)
@@ -2076,9 +2034,7 @@ func TestLynxFlow_BareExprParenthesized(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Filter Tests
-// =============================================================================
 
 func TestLynxFlow_WhereRegex(t *testing.T) {
 	q, err := Parse(`from nginx | where uri =~ "^/api/"`)
@@ -2095,9 +2051,7 @@ func TestLynxFlow_WhereRegex(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Ranking/Order Tests
-// =============================================================================
 
 func TestLynxFlow_Tail(t *testing.T) {
 	q, err := Parse(`from app | tail 5`)
@@ -2186,9 +2140,7 @@ func TestLynxFlow_PercentilesNoBy(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Combining Tests
-// =============================================================================
 
 func TestLynxFlow_JoinLeft(t *testing.T) {
 	q, err := Parse(`from nginx | join type=left user_id [from users]`)
@@ -2221,9 +2173,7 @@ func TestLynxFlow_Multisearch(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Window Ops Tests
-// =============================================================================
 
 func TestLynxFlow_RunningWindowCurrentBy(t *testing.T) {
 	q, err := Parse(`from app | running window=5 current=false avg(x) as ra by service`)
@@ -2248,9 +2198,7 @@ func TestLynxFlow_RunningWindowCurrentBy(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Null Handling Tests
-// =============================================================================
 
 func TestLynxFlow_FillnullBare(t *testing.T) {
 	q, err := Parse(`from app | fillnull`)
@@ -2280,9 +2228,7 @@ func TestLynxFlow_FillnullValueZero(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Presentation Tests
-// =============================================================================
 
 func TestLynxFlow_TableStar(t *testing.T) {
 	q, err := Parse(`from app | table *`)
@@ -2298,9 +2244,7 @@ func TestLynxFlow_TableStar(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Parse All Formats (Spec 02 — Remaining formats)
-// =============================================================================
 
 func TestLynxFlow_ParseAllFormats(t *testing.T) {
 	formats := []string{
@@ -2331,9 +2275,7 @@ func TestLynxFlow_ParseAllFormats(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Field Shaping Tests
-// =============================================================================
 
 func TestLynxFlow_RenameMulti(t *testing.T) {
 	q, err := Parse(`from app | rename old1 as new1, old2 as new2`)
@@ -2355,9 +2297,7 @@ func TestLynxFlow_RenameMulti(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Equivalence Tests
-// =============================================================================
 
 func TestLynxFlow_Equiv_ParseJsonIsUnpackJson(t *testing.T) {
 	q1, err := Parse(`from app | parse json(_raw)`)
@@ -2408,13 +2348,9 @@ func TestLynxFlow_Equiv_PackIsPackJson(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Cross-Syntax Hint Tests (error_hints.go)
-// =============================================================================
 
-// =============================================================================
 // Additional Sort Tests
-// =============================================================================
 
 func TestLynxFlow_SortMultiDashPlus(t *testing.T) {
 	// SPL-style multi-field sort: sort -status, +uri
@@ -2434,9 +2370,7 @@ func TestLynxFlow_SortMultiDashPlus(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Filter Tests
-// =============================================================================
 
 func TestLynxFlow_WhereNotIn(t *testing.T) {
 	q, err := Parse(`from app | where status not in (200, 301)`)
@@ -2471,9 +2405,7 @@ func TestLynxFlow_WhereNotLike(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Domain Sugar Tests
-// =============================================================================
 
 func TestLynxFlow_ErrorsMultiAgg(t *testing.T) {
 	q, err := Parse(`from app | errors by service compute count(), dc(user_id)`)
@@ -2560,9 +2492,7 @@ func TestLynxFlow_LatencyAllPercentiles(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Views Tests
-// =============================================================================
 
 func TestLynxFlow_ViewsDetail(t *testing.T) {
 	q, err := Parse(`| views "mv_errors_5m"`)
@@ -2592,9 +2522,7 @@ func TestLynxFlow_ViewsRetention(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Parse Modifier Tests
-// =============================================================================
 
 func TestLynxFlow_ParseRegexWithModifiers(t *testing.T) {
 	// parse regex with as namespace modifier
@@ -2610,9 +2538,7 @@ func TestLynxFlow_ParseRegexWithModifiers(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Equivalence Tests
-// =============================================================================
 
 func TestLynxFlow_Equiv_EveryIsTimechart(t *testing.T) {
 	lf, err := Parse(`from app | every 5m compute count()`)
@@ -2655,9 +2581,7 @@ func TestLynxFlow_Equiv_BucketIsBin(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Error Tests
-// =============================================================================
 
 func TestLynxFlow_Error_PackMissingInto(t *testing.T) {
 	_, err := Parse(`from app | pack f1 f2`)
@@ -2693,9 +2617,7 @@ func TestLynxFlow_Error_SelectNoColumns(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Cross-Syntax Hint Tests (error_hints.go)
-// =============================================================================
 
 func TestLynxFlow_HintComputeAsCommand(t *testing.T) {
 	_, err := Parse(`from app | compute count()`)
@@ -2719,9 +2641,7 @@ func TestLynxFlow_HintUsingAsCommand(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 01 — Source via Normalizer Round-Trip
-// =============================================================================
 
 func TestLynxFlow_NormalizerIndexSpaceSeparated(t *testing.T) {
 	// "index nginx" is normalized to "FROM nginx" before parsing.
@@ -2747,9 +2667,7 @@ func TestLynxFlow_NormalizerIndexQuoted(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Error Hint Tests — Lynx Flow-specific recovery suggestions
-// =============================================================================
 
 func TestLynxFlow_HintParseFormatName(t *testing.T) {
 	// Simulated error: parse without format name.
@@ -2794,9 +2712,7 @@ func TestLynxFlow_HintEveryMissingCompute(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Additional Error Tests — Gap completion
-// =============================================================================
 
 func TestLynxFlow_Error_GroupNeitherByNorCompute(t *testing.T) {
 	// "group" alone (no by, no compute) should error.
@@ -2820,9 +2736,7 @@ func TestLynxFlow_Error_GroupByFieldNoCompute(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Lynx Flow Commands as Normalizer Known Commands
-// =============================================================================
 
 func TestLynxFlow_NormalizerAllLynxFlowCommands(t *testing.T) {
 	// All Lynx Flow commands should be recognized by the normalizer so that
@@ -2851,9 +2765,7 @@ func TestLynxFlow_NormalizerAllLynxFlowCommands(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Spec 14 — Additional expression edge cases
-// =============================================================================
 
 func TestLynxFlow_LetStringConcat(t *testing.T) {
 	// Concatenation via + on strings should parse.
@@ -2883,9 +2795,7 @@ func TestLynxFlow_WhereComplex(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Pipeline integration: domain sugar embedded in longer pipelines
-// =============================================================================
 
 func TestLynxFlow_Pipeline_LatencyInPipeline(t *testing.T) {
 	input := `from nginx | where uri like "/api/%" | latency dur every 5m compute p50, p99`
@@ -2964,9 +2874,7 @@ func TestLynxFlow_Pipeline_ParseThenGroupThenOrder(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Multi-field explode
-// =============================================================================
 
 func TestLynxFlow_ExplodeMultiField(t *testing.T) {
 	q, err := Parse(`| explode product, price`)
@@ -3049,9 +2957,7 @@ func TestLynxFlow_ExplodeMultiFieldString(t *testing.T) {
 	}
 }
 
-// =============================================================================
 // Parse-less format shortcut: `| <format>(field)` === `| parse <format>(field)`
-// =============================================================================
 
 func TestLynxFlow_ParseShortcut_Combined(t *testing.T) {
 	q, err := Parse(`from nginx | combined(_raw)`)

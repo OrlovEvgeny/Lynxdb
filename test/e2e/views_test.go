@@ -13,7 +13,6 @@ func TestE2E_Views_CRUD(t *testing.T) {
 	h := NewHarness(t, WithDisk())
 	ctx := context.Background()
 
-	// Create.
 	view, err := h.Client().CreateView(ctx, client.ViewInput{
 		Name: "mv_test_hosts",
 		Q:    `FROM main | stats count by host`,
@@ -40,7 +39,6 @@ func TestE2E_Views_CRUD(t *testing.T) {
 		t.Error("created view not found in ListViews")
 	}
 
-	// Get.
 	detail, err := h.Client().GetView(ctx, "mv_test_hosts")
 	if err != nil {
 		t.Fatalf("GetView: %v", err)
@@ -61,7 +59,6 @@ func TestE2E_Views_CRUD(t *testing.T) {
 		t.Errorf("PatchView retention: got %q, want %q", patched.Retention, "720h")
 	}
 
-	// Delete.
 	err = h.Client().DeleteView(ctx, "mv_test_hosts")
 	if err != nil {
 		t.Fatalf("DeleteView: %v", err)

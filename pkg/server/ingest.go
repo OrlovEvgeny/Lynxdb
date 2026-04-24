@@ -83,7 +83,6 @@ func (e *Engine) IngestContext(ctx context.Context, events []*event.Event) error
 	// for any query whose results may have changed (E3: cache invalidation).
 	e.ingestGen.Add(1)
 
-	// Update ingestion metrics.
 	e.metrics.IngestEvents.Add(int64(len(events)))
 	e.metrics.IngestBatches.Add(1)
 

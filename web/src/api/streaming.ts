@@ -11,9 +11,7 @@
 import type { QueryResult, QueryStats } from "./client";
 import { authHeaders, handleAuthError, token } from "./auth";
 
-// ---------------------------------------------------------------------------
 // Types
-// ---------------------------------------------------------------------------
 
 export interface HybridResult {
   status: "sync" | "async";
@@ -46,9 +44,7 @@ export interface ProgressData {
   preview_version?: number;
 }
 
-// ---------------------------------------------------------------------------
 // submitHybridQuery
-// ---------------------------------------------------------------------------
 
 /**
  * Submit a query with hybrid execution (wait up to 200ms for sync result).
@@ -109,9 +105,7 @@ export async function submitHybridQuery(
   };
 }
 
-// ---------------------------------------------------------------------------
 // streamQuery
-// ---------------------------------------------------------------------------
 
 /**
  * Consume an NDJSON stream from /api/v1/query/stream.
@@ -220,9 +214,7 @@ function processLine(line: string, callbacks: StreamCallbacks): boolean {
   }
 }
 
-// ---------------------------------------------------------------------------
 // subscribeJobProgress
-// ---------------------------------------------------------------------------
 
 /**
  * Subscribe to job progress via SSE.
@@ -290,9 +282,7 @@ export function subscribeJobProgress(
   return () => source.close();
 }
 
-// ---------------------------------------------------------------------------
 // cancelJob
-// ---------------------------------------------------------------------------
 
 /**
  * Cancel a running async query job.

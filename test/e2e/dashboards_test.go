@@ -16,7 +16,6 @@ func TestE2E_Dashboards_CRUD(t *testing.T) {
 	h := NewHarness(t)
 	ctx := context.Background()
 
-	// Create.
 	input := client.DashboardInput{
 		Name: "test-dashboard",
 		Panels: []client.Panel{
@@ -69,7 +68,6 @@ func TestE2E_Dashboards_CRUD(t *testing.T) {
 		t.Errorf("expected 1 panel, got %d", len(got.Panels))
 	}
 
-	// Update.
 	input.Name = "test-dashboard-updated"
 	updated, err := h.Client().UpdateDashboard(ctx, dashID, input)
 	if err != nil {
@@ -79,7 +77,6 @@ func TestE2E_Dashboards_CRUD(t *testing.T) {
 		t.Errorf("expected updated name, got %s", updated.Name)
 	}
 
-	// Delete.
 	err = h.Client().DeleteDashboard(ctx, dashID)
 	if err != nil {
 		t.Fatalf("DeleteDashboard: %v", err)

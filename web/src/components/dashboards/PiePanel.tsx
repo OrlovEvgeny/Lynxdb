@@ -74,7 +74,6 @@ export function PiePanel({ data }: { data: AggregateResult }) {
     pct: (((Number(row[valIdx]) || 0) / total) * 100).toFixed(1),
   }));
 
-  // Build SVG paths
   let cumAngle = -Math.PI / 2;
   const paths: { d: string; color: string }[] = [];
 

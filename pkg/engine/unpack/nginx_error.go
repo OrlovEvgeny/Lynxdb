@@ -72,7 +72,6 @@ func (p *NginxErrorParser) Parse(input string, emit func(key string, val event.V
 	}
 	i += bracketEnd + 1
 
-	// Parse pid#tid:
 	i = skipSpaces(s, i)
 	pidTidEnd := strings.IndexByte(s[i:], ':')
 	if pidTidEnd < 0 {
@@ -92,7 +91,6 @@ func (p *NginxErrorParser) Parse(input string, emit func(key string, val event.V
 		}
 	}
 
-	// Parse optional *cid
 	i = skipSpaces(s, i)
 	if i < len(s) && s[i] == '*' {
 		i++ // skip '*'

@@ -561,7 +561,6 @@ func (s *SegmentStreamIterator) advanceRowGroup() bool {
 			return false
 		}
 
-		// Initialize new segment.
 		seg := s.segments[s.segIdx]
 
 		// Skip segments with no reader.

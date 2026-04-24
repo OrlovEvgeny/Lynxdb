@@ -165,7 +165,6 @@ func (psw *PartStreamWriter) WriteRowGroup(ctx context.Context, events []*event.
 		return fmt.Errorf("part.PartStreamWriter: write row group: %w", err)
 	}
 
-	// Update metadata.
 	for _, ev := range events {
 		if psw.eventCount == 0 || ev.Time.Before(psw.minTime) {
 			psw.minTime = ev.Time

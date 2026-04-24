@@ -136,7 +136,6 @@ func (r *RollupIterator) computeRollup(span string, rows []map[string]event.Valu
 		info.count++
 	}
 
-	// Build result rows.
 	result := make([]map[string]event.Value, 0, len(groups))
 	for _, info := range groups {
 		out := make(map[string]event.Value, 2+len(r.groupBy))

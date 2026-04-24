@@ -88,7 +88,6 @@ func (g *globalGovernor) Reserve(class MemoryClass, n int64) error {
 
 	g.mu.Lock()
 
-	// Check per-class limit.
 	if g.limits[class] > 0 && g.allocated[class]+n > g.limits[class] {
 		g.mu.Unlock()
 
@@ -96,7 +95,6 @@ func (g *globalGovernor) Reserve(class MemoryClass, n int64) error {
 			ErrMemoryPressure, class, n, g.allocated[class], g.limits[class])
 	}
 
-	// Check total limit.
 	if g.limit > 0 && g.totalAllocated+n > g.limit {
 		// Need to reclaim memory. Release lock before invoking callbacks.
 		deficit := g.totalAllocated + n - g.limit
@@ -139,12 +137,10 @@ func (g *globalGovernor) TryReserve(class MemoryClass, n int64) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	// Check per-class limit.
 	if g.limits[class] > 0 && g.allocated[class]+n > g.limits[class] {
 		return false
 	}
 
-	// Check total limit.
 	if g.limit > 0 && g.totalAllocated+n > g.limit {
 		return false
 	}

@@ -109,7 +109,6 @@ func TestOptimizer_AllAnnotationsPopulated(t *testing.T) {
 	opt := New()
 	result := opt.Optimize(q)
 
-	// Check annotations.
 	checks := []string{"timeAnnotation", "bloomTerms", "fieldPredicates", "requiredColumns", "rexPreFilter"}
 	for _, key := range checks {
 		if _, ok := result.GetAnnotation(key); !ok {

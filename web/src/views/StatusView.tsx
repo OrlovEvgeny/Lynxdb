@@ -8,18 +8,14 @@ interface Props {
   path?: string;
 }
 
-// ---------------------------------------------------------------------------
 // State
-// ---------------------------------------------------------------------------
 
 const status = signal<Record<string, unknown> | null>(null);
 const loading = signal(true);
 const error = signal<string | null>(null);
 const lastUpdatedAt = signal<Date | null>(null);
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 function safeNumber(value: unknown): number {
   if (typeof value === "number" && !isNaN(value)) return value;
@@ -59,9 +55,7 @@ function formatLastUpdated(date: Date | null): string {
   return `Last updated ${h}:${m}:${s}`;
 }
 
-// ---------------------------------------------------------------------------
 // Component
-// ---------------------------------------------------------------------------
 
 export function StatusView(_props: Props) {
   const loadStatus = useCallback(async () => {

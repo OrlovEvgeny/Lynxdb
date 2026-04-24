@@ -27,7 +27,6 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 		t.Fatalf("parse leaf: %v", err)
 	}
 
-	// Check subject.
 	if leaf.Subject.CommonName != "lynxdb" {
 		t.Errorf("CN = %q, want lynxdb", leaf.Subject.CommonName)
 	}
@@ -53,7 +52,6 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 		t.Error("SANs missing 127.0.0.1 IP")
 	}
 
-	// Check key usage.
 	if leaf.KeyUsage&x509.KeyUsageDigitalSignature == 0 {
 		t.Error("missing DigitalSignature key usage")
 	}

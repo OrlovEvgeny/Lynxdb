@@ -25,7 +25,6 @@ func testAlert(name string) *Alert {
 func TestStoreCRUD(t *testing.T) {
 	s := OpenInMemory()
 
-	// Create.
 	a := testAlert("alert-1")
 	if err := s.Create(a); err != nil {
 		t.Fatalf("Create: %v", err)
@@ -40,7 +39,6 @@ func TestStoreCRUD(t *testing.T) {
 		t.Fatalf("List[0].Name = %q, want %q", list[0].Name, "alert-1")
 	}
 
-	// Get.
 	got, err := s.Get(a.ID)
 	if err != nil {
 		t.Fatalf("Get: %v", err)
@@ -49,7 +47,6 @@ func TestStoreCRUD(t *testing.T) {
 		t.Fatalf("Get.Name = %q, want %q", got.Name, "alert-1")
 	}
 
-	// Update.
 	got.Name = "alert-1-updated"
 	if err := s.Update(got); err != nil {
 		t.Fatalf("Update: %v", err)
@@ -59,7 +56,6 @@ func TestStoreCRUD(t *testing.T) {
 		t.Fatalf("after Update, Name = %q, want %q", got2.Name, "alert-1-updated")
 	}
 
-	// Delete.
 	if err := s.Delete(a.ID); err != nil {
 		t.Fatalf("Delete: %v", err)
 	}

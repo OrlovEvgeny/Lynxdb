@@ -71,7 +71,6 @@ export function CommandPalette() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(0);
 
-  // Build items list
   const navigationItems: PaletteItem[] = [
     {
       id: "nav-search",

@@ -24,6 +24,10 @@ release-tmp
 __pycache__/
 *.pyc
 
+# Local comment lint helper
+lint-comm
+.lint-comm-memory.json
+
 # GoReleaser
 /dist/
 /docs/site/node_modules/

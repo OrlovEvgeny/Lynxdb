@@ -194,7 +194,6 @@ func (e *Engine) runTieringCycle(ctx context.Context) {
 		e.mu.Unlock()
 	}
 
-	// Delete expired.
 	for _, id := range result.Expired {
 		if err := e.tierMgr.DeleteExpired(ctx, id); err != nil {
 			e.logger.Error("tiering: delete expired failed", "id", id, "error", err)

@@ -73,9 +73,7 @@ export function ExplainInspector({ explain, stats }: ExplainInspectorProps) {
   );
 }
 
-// ---------------------------------------------------------------------------
 // Optimizer Rules tab
-// ---------------------------------------------------------------------------
 
 function OptimizerRulesTab({ rules }: { rules?: { name: string; description?: string; count: number }[] }) {
   if (!rules || rules.length === 0) {
@@ -99,9 +97,7 @@ function OptimizerRulesTab({ rules }: { rules?: { name: string; description?: st
   );
 }
 
-// ---------------------------------------------------------------------------
 // Scan Plan tab
-// ---------------------------------------------------------------------------
 
 function ScanPlanTab({ parsed }: { parsed: NonNullable<ExplainResult["parsed"]> }) {
   const rows: { label: string; value: string }[] = [];
@@ -160,9 +156,7 @@ function ScanPlanTab({ parsed }: { parsed: NonNullable<ExplainResult["parsed"]> 
   );
 }
 
-// ---------------------------------------------------------------------------
 // Timing tab
-// ---------------------------------------------------------------------------
 
 function TimingTab({
   parsed,

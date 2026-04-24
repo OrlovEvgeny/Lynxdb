@@ -15,7 +15,6 @@ before:
     - bash -c "cd web && bun install && bun run build && rm -rf ../internal/webui/dist && cp -r dist ../internal/webui/dist"
 
 builds:
-  # ── GNU/glibc builds ────────────────────────────────────────────────────
   - id: lynxdb-gnu
     binary: lynxdb
     main: ./cmd/lynxdb/
@@ -46,7 +45,6 @@ builds:
     flags:
       - -trimpath
 
-  # ── Musl/static builds (Alpine, distroless) ────────────────────────────
   - id: lynxdb-musl
     binary: lynxdb
     main: ./cmd/lynxdb/
@@ -68,7 +66,6 @@ builds:
     mod_timestamp: "{{ .CommitTimestamp }}"
 
 archives:
-  # ── Standard archives (tar.gz for Unix, zip for Windows) ───────────────
   - id: default
     ids:
       - lynxdb-gnu
@@ -83,7 +80,6 @@ archives:
       - README.md
       - CHANGELOG.md*
 
-  # ── Musl archives ──────────────────────────────────────────────────────
   - id: musl
     ids:
       - lynxdb-musl
@@ -120,7 +116,6 @@ release:
     ---
     **Full changelog**: https://github.com/lynxbase/lynxdb/compare/{{ .PreviousTag }}...{{ .Tag }}
 
-# ── Homebrew Tap ──────────────────────────────────────────────────────────
 brews:
   - name: lynxdb
     ids:
@@ -144,7 +139,6 @@ brews:
     test: |
       system bin/"lynxdb", "version"
 
-# ── Docker images (GitHub Container Registry) ────────────────────────────
 dockers:
   - image_templates:
       - "ghcr.io/lynxbase/lynxdb:{{ .Version }}-amd64"
@@ -178,7 +172,6 @@ docker_manifests:
       - "ghcr.io/lynxbase/lynxdb:latest-amd64"
       - "ghcr.io/lynxbase/lynxdb:latest-arm64"
 
-# ── Announce ──────────────────────────────────────────────────────────────
 changelog:
   sort: asc
   use: github

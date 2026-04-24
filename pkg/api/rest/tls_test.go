@@ -205,7 +205,6 @@ func TestTLS_WithAuth(t *testing.T) {
 		MinVersion:   tls.VersionTLS12,
 	}
 
-	// Set up auth.
 	ks, err := auth.OpenKeyStore(dir)
 	if err != nil {
 		t.Fatal(err)

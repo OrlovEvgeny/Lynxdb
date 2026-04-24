@@ -9,9 +9,7 @@ import (
 	"testing"
 )
 
-// ============================================================================
 // Helpers for complex tests
-// ============================================================================
 
 // generateBackendEvents creates NDJSON lines mimicking backend_server.log
 // with services: api, payment, gateway, auth.  Each event has level, service,
@@ -133,9 +131,7 @@ func sumRowCounts(t *testing.T, stdout string) int {
 	return total
 }
 
-// ============================================================================
 // CTE (Common Table Expression) Tests
-// ============================================================================
 
 func TestComplex_CTE_BasicFilter_Count(t *testing.T) {
 	// generateBackendEvents cycles levels INFO,INFO,INFO,WARN,ERROR so ERROR = n/5.
@@ -194,9 +190,7 @@ func TestComplex_CTE_Chained_ConsistentResults(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // JOIN Tests
-// ============================================================================
 
 func TestComplex_Join_ByField_Count(t *testing.T) {
 	// LEFT produces one row per service with total count; RIGHT produces one row
@@ -217,9 +211,7 @@ func TestComplex_Join_ByField_Count(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // APPEND Tests
-// ============================================================================
 
 func TestComplex_Append_TotalIsSum(t *testing.T) {
 	// Two one-row aggregates concatenated via APPEND must emit both rows.
@@ -245,9 +237,7 @@ func TestComplex_Append_TotalIsSum(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Deep Pipeline Tests
-// ============================================================================
 
 func TestComplex_DeepPipeline_CountsAddUp(t *testing.T) {
 	// 7-command pipeline: where → eval → stats → sort → head → eval → stats
@@ -311,9 +301,7 @@ func TestComplex_DeepPipeline_SortOrderCorrect(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Nested Aggregation Tests
-// ============================================================================
 
 func TestComplex_NestedAgg_TwoPhaseConsistent(t *testing.T) {
 	// stats → eval → stats: phase-2 groups must be a function of phase-1 results.
@@ -342,9 +330,7 @@ func TestComplex_NestedAgg_TwoPhaseConsistent(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Eval Function Tests
-// ============================================================================
 
 func TestComplex_EvalReplace_OutputIsValid(t *testing.T) {
 	// Replace strips non-alpha chars from message.
@@ -454,9 +440,7 @@ func TestComplex_EvalNullCoalesce(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Percentile Aggregation Tests
-// ============================================================================
 
 func TestComplex_Percentiles_Ordered(t *testing.T) {
 	// p25 <= p50 <= p75 <= p90 <= p99
@@ -489,9 +473,7 @@ func TestComplex_Percentiles_Ordered(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Search Expression Tests (AND, OR, NOT)
-// ============================================================================
 
 func TestComplex_SearchAND_CountMatchesWhere(t *testing.T) {
 	input := generateBackendEvents(50)
@@ -539,9 +521,7 @@ func TestComplex_SearchOR_ReturnsAtLeastOnePart(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // WHERE BETWEEN Tests
-// ============================================================================
 
 func TestComplex_WhereBetween_MinMaxInRange(t *testing.T) {
 	input := generateBackendEvents(50)
@@ -564,9 +544,7 @@ func TestComplex_WhereBetween_MinMaxInRange(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Streamstats Monotonicity Tests
-// ============================================================================
 
 func TestComplex_Streamstats_CumulativeMonotonic(t *testing.T) {
 	input := generateBackendEvents(20)
@@ -597,9 +575,7 @@ func TestComplex_Streamstats_CumulativeMonotonic(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Dedup Multi-Field Tests
-// ============================================================================
 
 func TestComplex_DedupMulti_CountMatchesDistinctGroups(t *testing.T) {
 	input := generateBackendEvents(50)
@@ -637,9 +613,7 @@ func TestComplex_DedupMulti_CountMatchesDistinctGroups(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // CASE Eval — No Null Buckets
-// ============================================================================
 
 func TestComplex_EvalCase_NoNullBuckets(t *testing.T) {
 	// CASE with default (1=1) means every event must land in a bucket.
@@ -671,9 +645,7 @@ func TestComplex_EvalCase_NoNullBuckets(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // earliest/latest Aggregation Tests
-// ============================================================================
 
 func TestComplex_EarliestLatest_ByGroup(t *testing.T) {
 	input := generateBackendEvents(50)
@@ -703,9 +675,7 @@ func TestComplex_EarliestLatest_ByGroup(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Large Input Stress Tests
-// ============================================================================
 
 func TestComplex_LargeInput_5000Events_DeepPipeline(t *testing.T) {
 	input := generateBackendEvents(5000)
@@ -732,9 +702,7 @@ func TestComplex_LargeInput_5000Events_DeepPipeline(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Eval String Functions Combined
-// ============================================================================
 
 func TestComplex_EvalStringFunctions_Chained(t *testing.T) {
 	input := generateBackendEvents(30)
@@ -763,9 +731,7 @@ func TestComplex_EvalStringFunctions_Chained(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Eval strftime Test
-// ============================================================================
 
 func TestComplex_EvalStrftime_HourExtraction(t *testing.T) {
 	input := generateBackendEvents(30)
@@ -794,9 +760,7 @@ func TestComplex_EvalStrftime_HourExtraction(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Eval cidrmatch Test
-// ============================================================================
 
 func TestComplex_EvalCIDRMatch(t *testing.T) {
 	input := generateBackendEvents(20)
@@ -822,9 +786,7 @@ func TestComplex_EvalCIDRMatch(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Eval isnum / isint Tests
-// ============================================================================
 
 func TestComplex_EvalIsNumIsInt(t *testing.T) {
 	input := generateBackendEvents(20)
@@ -844,9 +806,7 @@ func TestComplex_EvalIsNumIsInt(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Domain Sugar Commands
-// ============================================================================
 
 func TestComplex_DomainPercentiles(t *testing.T) {
 	input := generateBackendEvents(50)
@@ -896,9 +856,7 @@ func TestComplex_DomainErrors(t *testing.T) {
 	_ = rows
 }
 
-// ============================================================================
 // Analytics Commands
-// ============================================================================
 
 func TestComplex_AnalyticsOutliers(t *testing.T) {
 	input := generateBackendEvents(100)
@@ -965,9 +923,7 @@ func TestComplex_AnalyticsGlimpse(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // F-string Interpolation Test
-// ============================================================================
 
 func TestComplex_EvalFString(t *testing.T) {
 	input := generateBackendEvents(20)
@@ -996,9 +952,7 @@ func TestComplex_EvalFString(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // JSON Eval Functions Test
-// ============================================================================
 
 func TestComplex_EvalJsonFunctions(t *testing.T) {
 	input := generateBackendEvents(20)
@@ -1016,9 +970,7 @@ func TestComplex_EvalJsonFunctions(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // XYseries Completeness Test
-// ============================================================================
 
 func TestComplex_XYseries_AllCellsPresent(t *testing.T) {
 	input := generateBackendEvents(50)
@@ -1047,9 +999,7 @@ func TestComplex_XYseries_AllCellsPresent(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Server-Mode Complex Tests
-// ============================================================================
 
 func TestComplex_Server_CrossIndexCount_SumMatches(t *testing.T) {
 	srv := startServer(t)
@@ -1167,9 +1117,7 @@ func TestComplex_Server_Join_CrossIndex(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Server-Mode Advanced Query Patterns
-// ============================================================================
 
 func TestComplex_Server_NestedAggregation(t *testing.T) {
 	srv := startServer(t)
@@ -1327,9 +1275,7 @@ func TestComplex_Server_WhereBetween(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Analytics Commands (Server Mode)
-// ============================================================================
 
 func TestComplex_Server_Outliers(t *testing.T) {
 	srv := startServer(t)
@@ -1403,9 +1349,7 @@ func TestComplex_Server_Sessionize(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Server-Mode Domain Sugar Commands
-// ============================================================================
 
 func TestComplex_Server_DomainLatency(t *testing.T) {
 	srv := startServer(t)
@@ -1431,9 +1375,7 @@ func TestComplex_Server_DomainRate(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Server-Mode CTE Tests
-// ============================================================================
 
 func TestComplex_Server_CTE_BasicFilter(t *testing.T) {
 	// CTE with explicit FROM + WHERE must filter server-side.
@@ -1472,9 +1414,7 @@ func TestComplex_Server_CTE_Chained(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Helpers
-// ============================================================================
 
 // serverQueryCount is a helper that runs a server query and returns the count.
 func serverQueryCount(t *testing.T, srv *Server, query string) int {

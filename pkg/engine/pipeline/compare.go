@@ -153,7 +153,6 @@ func (c *CompareIterator) mergeRows() *Batch {
 		prevLookup[key] = row
 	}
 
-	// Build output batch.
 	b := NewBatch(len(c.currentRows))
 	for _, row := range c.currentRows {
 		key := buildGroupKey(row, groupCols)

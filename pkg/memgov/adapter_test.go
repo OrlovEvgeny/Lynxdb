@@ -8,9 +8,7 @@ import (
 // Compile-time interface check: AccountAdapter must implement MemoryAccount.
 var _ MemoryAccount = (*AccountAdapter)(nil)
 
-// ---------------------------------------------------------------------------
 // AccountAdapter unit tests
-// ---------------------------------------------------------------------------
 
 func TestUnit_AccountAdapter_Grow_IncreasesUsedAndMaxUsed(t *testing.T) {
 	gov := NewGovernor(GovernorConfig{TotalLimit: 1 << 20})
@@ -309,9 +307,7 @@ func TestUnit_AccountAdapter_GrowShrinkGrow_StateConsistency(t *testing.T) {
 	}
 }
 
-// ---------------------------------------------------------------------------
 // BudgetAdapter unit tests
-// ---------------------------------------------------------------------------
 
 func TestUnit_BudgetAdapter_NewAccount_CreatesWorkingAccountAdapter(t *testing.T) {
 	gov := NewGovernor(GovernorConfig{TotalLimit: 1 << 20})

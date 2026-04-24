@@ -76,7 +76,6 @@ func TestStorageMetrics_JSON(t *testing.T) {
 		}
 	}
 
-	// Check nested values.
 	flushMap := result["flush"].(map[string]interface{})
 	if flushMap["flushes"].(float64) != 5 {
 		t.Errorf("flush.flushes: %v", flushMap["flushes"])

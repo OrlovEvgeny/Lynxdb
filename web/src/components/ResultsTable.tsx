@@ -5,9 +5,7 @@ import { updateSortInQuery, parseSortFromQuery } from "../utils/sortQuery";
 import { EventDetailInline } from "./EventDetail";
 import styles from "./ResultsTable.module.css";
 
-// ---------------------------------------------------------------------------
 // Types
-// ---------------------------------------------------------------------------
 
 interface ResultsTableProps {
   result: QueryResult | null;
@@ -17,9 +15,7 @@ interface ResultsTableProps {
   onFilter?: (field: string, value: string, exclude: boolean) => void;
 }
 
-// ---------------------------------------------------------------------------
 // Constants
-// ---------------------------------------------------------------------------
 
 const ROW_HEIGHT = 28;
 const OVERSCAN = 5;
@@ -63,9 +59,7 @@ function computeDefaultWidths(
   return widths;
 }
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 /** Format an ISO timestamp to HH:mm:ss.SSS */
 function formatTime(value: unknown): string {
@@ -159,9 +153,7 @@ function useTableData(result: QueryResult | null): {
   };
 }
 
-// ---------------------------------------------------------------------------
 // Component
-// ---------------------------------------------------------------------------
 
 export function ResultsTable({
   result,

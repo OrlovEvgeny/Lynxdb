@@ -130,7 +130,6 @@ func (p *PostgresParser) Parse(input string, emit func(key string, val event.Val
 		}
 	}
 
-	// Parse SEVERITY: message
 	// Severity is all-caps word before ":"
 	nextColon = strings.IndexByte(s[severityStart:], ':')
 	if nextColon < 0 {

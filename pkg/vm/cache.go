@@ -66,7 +66,6 @@ func (pc *ProgramCache) Put(expr string, prog *Program) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	// Update existing entry.
 	if elem, ok := pc.cache[h]; ok {
 		pc.lru.MoveToFront(elem)
 		elem.Value.(*cacheEntry).prog = prog

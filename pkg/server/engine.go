@@ -336,7 +336,6 @@ func NewEngine(cfg Config) *Engine {
 	// Wire cache memory into the governor so inserts/evictions are tracked.
 	e.cache.SetPool(cache.NewGovernorPoolAdapter(gov))
 
-	// Create default index.
 	e.indexes[DefaultIndexName] = model.DefaultIndexConfig(DefaultIndexName)
 
 	// Wire cluster config to pipeline globals.

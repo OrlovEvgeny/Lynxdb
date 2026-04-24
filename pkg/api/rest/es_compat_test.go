@@ -703,7 +703,6 @@ func TestESStub_ILMPolicy(t *testing.T) {
 		t.Fatalf("expected error payload, got %v", result)
 	}
 
-	// Check X-Elastic-Product header.
 	if h := resp.Header.Get("X-Elastic-Product"); h != "Elasticsearch" {
 		t.Fatalf("X-Elastic-Product: got %q, want Elasticsearch", h)
 	}

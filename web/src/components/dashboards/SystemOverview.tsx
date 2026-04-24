@@ -6,9 +6,7 @@ import { DashboardHeader } from "./DashboardHeader";
 import { PanelChrome } from "./PanelChrome";
 import { PanelRenderer } from "./PanelRenderer";
 
-// ---------------------------------------------------------------------------
 // System overview panel definitions
-// ---------------------------------------------------------------------------
 
 interface SystemPanel extends DashboardPanel {
   dataSource?: "stats";
@@ -84,9 +82,7 @@ const SYSTEM_OVERVIEW_PANELS: SystemPanel[] = [
   },
 ];
 
-// ---------------------------------------------------------------------------
 // Stats-based stat panel hook
-// ---------------------------------------------------------------------------
 
 function useStatsPanel(
   statsField: string,
@@ -138,9 +134,7 @@ function useStatsPanel(
   return { display, loading, error, refresh: execute };
 }
 
-// ---------------------------------------------------------------------------
 // Stat panel that uses /api/v1/stats
-// ---------------------------------------------------------------------------
 
 function StatsStatPanel({
   panel,
@@ -195,9 +189,7 @@ function StatsStatPanel({
   );
 }
 
-// ---------------------------------------------------------------------------
 // System Overview Component
-// ---------------------------------------------------------------------------
 
 export function SystemOverview() {
   const [from, setFrom] = useState(() => localStorage.getItem("lynxdb-dash-timerange") || "-1h");

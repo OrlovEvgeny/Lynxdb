@@ -792,7 +792,6 @@ func tryParseAtDate(s string) (string, int) {
 		return "", 0
 	}
 
-	// Validate digits.
 	for _, idx := range []int{0, 1, 2, 3, 5, 6, 8, 9} {
 		if date[idx] < '0' || date[idx] > '9' {
 			return "", 0

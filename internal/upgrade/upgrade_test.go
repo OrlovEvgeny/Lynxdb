@@ -209,7 +209,6 @@ func TestFetchManifestFallback(t *testing.T) {
 	}
 }
 
-// Check tests
 
 func TestCheckUpdateAvailable(t *testing.T) {
 	platformKey := PlatformKey()

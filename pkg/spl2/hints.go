@@ -274,7 +274,6 @@ func extractQueryHintsFromQuery(q *Query) *QueryHints {
 		}
 	}
 
-	// Get required columns.
 	h.RequiredCols = GetRequiredColumns(q)
 
 	// Merge optimizer annotations into hints.

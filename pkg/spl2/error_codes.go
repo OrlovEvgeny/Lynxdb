@@ -120,7 +120,6 @@ func ClassifyError(msg string) ErrorCode {
 		return ErrCodeQueryTooComplex
 	}
 
-	// Parse format.
 	if contains(lower, "parse") && contains(lower, "format") {
 		return ErrParseFormat
 	}

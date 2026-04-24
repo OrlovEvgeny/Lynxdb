@@ -96,7 +96,6 @@ func (p *Parser) parseProgram() (*Program, error) {
 		prog.Datasets = append(prog.Datasets, ds)
 	}
 
-	// Parse main query.
 	main, err := p.parseQuery()
 	if err != nil {
 		return nil, err
@@ -556,7 +555,6 @@ func (p *Parser) parseSearch() (Command, error) {
 			return nil, err
 		}
 		cmd := &SearchCommand{Index: idxName}
-		// Parse additional predicates.
 		for p.peek().Type != TokenPipe && p.peek().Type != TokenEOF &&
 			p.peek().Type != TokenRBracket {
 			pred, err := p.parseExpr()
@@ -1069,7 +1067,6 @@ func (p *Parser) parseSessionize() (*SessionizeCommand, error) {
 		cmd.MaxPause = dur.Literal
 	}
 
-	// Parse "by <group>".
 	if p.peek().Type == TokenBy {
 		p.advance()
 		groupBy, err := p.parseIdentList()
@@ -1204,7 +1201,6 @@ func (p *Parser) parseRex() (*RexCommand, error) {
 		cmd.Field = tok.Literal
 	}
 
-	// Parse regex pattern.
 	tok, err := p.expect(TokenString)
 	if err != nil {
 		return nil, err
@@ -1314,7 +1310,6 @@ func (p *Parser) parseBin() (*BinCommand, error) {
 	p.advance() // consume "bin"
 	cmd := &BinCommand{}
 
-	// Parse field name.
 	field, err := p.expectIdent()
 	if err != nil {
 		return nil, err
@@ -1424,7 +1419,6 @@ func (p *Parser) parseJoin() (*JoinCommand, error) {
 		cmd.JoinType = strings.ToLower(jt.Literal)
 	}
 
-	// Parse join field.
 	field, err := p.expectIdent()
 	if err != nil {
 		return nil, err
@@ -1471,7 +1465,6 @@ func (p *Parser) parseTransaction() (*TransactionCommand, error) {
 	p.advance() // consume "transaction"
 	cmd := &TransactionCommand{}
 
-	// Parse field.
 	field, err := p.expectIdent()
 	if err != nil {
 		return nil, err
@@ -2205,7 +2198,6 @@ func (p *Parser) parseJsonCmd() (*JsonCommand, error) {
 	p.advance() // consume "json"
 	cmd := &JsonCommand{SourceField: "_raw"}
 
-	// Parse options.
 	for p.peek().Type == TokenIdent {
 		name := strings.ToLower(p.peek().Literal)
 		switch name {
@@ -3030,9 +3022,7 @@ func indexCaseInsensitive(s, substr string) int {
 	return strings.Index(lower, strings.ToLower(substr))
 }
 
-// ---------------------------------------------------------------------------
 // Lynx Flow parse methods
-// ---------------------------------------------------------------------------
 
 // parseLet parses: let <field> = <expr> [, <field> = <expr> ...].
 // Desugars to EvalCommand.

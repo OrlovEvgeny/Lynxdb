@@ -132,7 +132,6 @@ const (
 	OpJsonRemove   Opcode = 0xD8 // pop path, pop field, push modified JSON
 	OpJsonMerge    Opcode = 0xD9 // pop json2, pop json1, push merged JSON
 
-	// Return.
 	OpReturn Opcode = 0xFF
 )
 

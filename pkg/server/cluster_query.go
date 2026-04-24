@@ -38,7 +38,6 @@ func (e *Engine) InitClusterQuery(node *cluster.Node, clientPool *rpc.ClientPool
 		return node.ShardMapCache().GetNodeAddrs()
 	}
 
-	// Create shard pruner.
 	pruner := querycluster.NewShardPruner(
 		node.ShardMapCache(),
 		e.sourceRegistry,
@@ -47,14 +46,12 @@ func (e *Engine) InitClusterQuery(node *cluster.Node, clientPool *rpc.ClientPool
 		logger,
 	)
 
-	// Create flow controller.
 	maxShardQueries := e.clusterCfg.MaxConcurrentShardQueries
 	if maxShardQueries == 0 {
 		maxShardQueries = querycluster.DefaultMaxConcurrentShards
 	}
 	flowCtrl := querycluster.NewFlowController(maxShardQueries, logger)
 
-	// Create coordinator config.
 	coordCfg := querycluster.CoordinatorConfig{
 		ShardQueryTimeout:       e.clusterCfg.ShardQueryTimeout.Duration(),
 		PartialResultsEnabled:   true,
@@ -64,7 +61,6 @@ func (e *Engine) InitClusterQuery(node *cluster.Node, clientPool *rpc.ClientPool
 		coordCfg.PartialResultsEnabled = *e.clusterCfg.PartialResultsEnabled
 	}
 
-	// Create coordinator.
 	e.clusterCoordinator = querycluster.NewCoordinator(
 		clientPool,
 		pruner,

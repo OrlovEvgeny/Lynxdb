@@ -171,7 +171,6 @@ func (s *MetaState) applyCompleteDrain(payload []byte) error {
 		return fmt.Errorf("meta.applyCompleteDrain: shard %q is %s, expected draining", p.ShardID, a.State)
 	}
 
-	// Set new primary.
 	a.Primary = p.NewPrimaryID
 	a.State = sharding.ShardActive
 	a.Epoch++

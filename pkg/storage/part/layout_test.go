@@ -73,7 +73,6 @@ func TestLayout_ListIndexes(t *testing.T) {
 	dir := t.TempDir()
 	l := NewLayout(dir)
 
-	// Create index directories.
 	for _, idx := range []string{"main", "nginx", "api"} {
 		ts := time.Date(2026, 3, 2, 0, 0, 0, 0, time.UTC)
 		if err := l.EnsurePartitionDir(idx, ts); err != nil {

@@ -59,7 +59,6 @@ func (s *MetaState) applyUpdateFieldCatalog(payload []byte) error {
 			s.FieldCatalog[fd.Name] = gfi
 		}
 
-		// Update per-node count.
 		gfi.NodeCounts[p.NodeID] = fd.Count
 
 		// Recompute total across all nodes.

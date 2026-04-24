@@ -29,7 +29,6 @@ env:
   GO_VERSION: "1.25.4"
 
 jobs:
-  # ── Build & Release ─────────────────────────────────────────────────────
   goreleaser:
     name: Build & Publish
     runs-on: ubuntu-latest
@@ -95,7 +94,6 @@ jobs:
             dist/checksums.txt
           retention-days: 5
 
-  # ── CDN Sync (Cloudflare R2) ────────────────────────────────────────────
   cdn-sync:
     name: Sync to CDN
     needs: goreleaser

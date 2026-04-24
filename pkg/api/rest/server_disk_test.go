@@ -473,7 +473,6 @@ func TestServer_MetricsPopulated(t *testing.T) {
 	// Use stats count by host to avoid countStarOnly metadata-only optimization.
 	_ = searchAndCount(t, srv, `FROM main | stats count by host`)
 
-	// Get metrics.
 	resp, err = http.Get(fmt.Sprintf("http://%s/api/v1/metrics", srv.Addr()))
 	if err != nil {
 		t.Fatalf("GET metrics: %v", err)

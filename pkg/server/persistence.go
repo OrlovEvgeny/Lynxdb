@@ -138,7 +138,6 @@ func (e *Engine) initDiskPersistence(ctx context.Context) error {
 	}
 	e.partWriter = part.NewWriter(e.partLayout, compression, part.DefaultRowGroupSize, writerOpts...)
 
-	// Create async batcher.
 	batcherCfg := part.BatcherConfig{
 		MaxEvents: 50_000,
 		MaxBytes:  64 * 1024 * 1024,
@@ -157,7 +156,6 @@ func (e *Engine) initDiskPersistence(ctx context.Context) error {
 		// Bump ingest generation for cache invalidation.
 		e.ingestGen.Add(1)
 
-		// Update flush metrics.
 		e.metrics.PartFlushes.Add(1)
 		e.metrics.PartFlushBytes.Add(meta.SizeBytes)
 
@@ -188,7 +186,6 @@ func (e *Engine) initDiskPersistence(ctx context.Context) error {
 	})
 	e.retentionMgr.Start(ctx)
 
-	// Initialize materialized views.
 	viewReg, err := views.Open(e.layout.ViewsDir())
 	if err != nil {
 		return fmt.Errorf("open view registry: %w", err)

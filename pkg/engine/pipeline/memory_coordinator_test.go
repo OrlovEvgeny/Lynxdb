@@ -587,7 +587,6 @@ func TestCoordinatorPhaseInStats(t *testing.T) {
 		t.Errorf("initial aggregate phase: got %d, want %d", s[1].Phase, PhaseIdle)
 	}
 
-	// Set various phases.
 	acctA.SetPhase(PhaseBuilding)
 	acctB.SetPhase(PhaseProbing)
 

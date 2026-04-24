@@ -49,7 +49,6 @@ func (s *MetaState) applyUpdateSourceRegistry(payload []byte) error {
 			s.Sources[sd.Name] = gsi
 		}
 
-		// Update per-node count.
 		gsi.NodeSet[p.NodeID] = sd.EventCount
 
 		// Recompute total across all nodes.

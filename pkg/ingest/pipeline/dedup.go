@@ -84,7 +84,6 @@ func (d *DedupStage) Process(events []*event.Event) ([]*event.Event, error) {
 			continue
 		}
 
-		// Check cross-batch ring.
 		if _, dup := d.ringSet[h]; dup {
 			dropped++
 

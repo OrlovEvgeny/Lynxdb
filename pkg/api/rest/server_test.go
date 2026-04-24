@@ -357,7 +357,6 @@ func TestServer_IngestRawLarge(t *testing.T) {
 	srv, cleanup := startTestServer(t)
 	defer cleanup()
 
-	// Build 5000 lines.
 	var buf bytes.Buffer
 	for i := 0; i < 5000; i++ {
 		fmt.Fprintf(&buf, "2024-01-01T00:00:%02dZ host=web-%02d level=INFO msg=\"request %d\"\n", i%60, i%10, i)

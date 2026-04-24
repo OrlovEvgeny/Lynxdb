@@ -240,7 +240,6 @@ func normalizeText(raw string) string {
 func assertGolden(t *testing.T, tc goldenTest, result Result) {
 	t.Helper()
 
-	// Check exit code.
 	switch tc.ExitCode {
 	case "0":
 		if result.ExitCode != 0 {
@@ -263,7 +262,6 @@ func assertGolden(t *testing.T, tc goldenTest, result Result) {
 		}
 	}
 
-	// Check stderr-contains.
 	if tc.StderrContains != "" {
 		if !strings.Contains(strings.ToLower(result.Stderr), strings.ToLower(tc.StderrContains)) {
 			t.Errorf("stderr does not contain %q\nstderr: %s", tc.StderrContains, result.Stderr)

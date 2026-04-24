@@ -29,9 +29,7 @@ func setupMultiIndexServer(t *testing.T) string {
 	return baseURL
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Group 1: Multi-Index Query Correctness
-// ═══════════════════════════════════════════════════════════════════════════
 
 func TestServerQuery_MultiIndex_CountPerIndex(t *testing.T) {
 	baseURL := setupMultiIndexServer(t)
@@ -598,9 +596,7 @@ func TestServerQuery_GroupByHost_SumsTo1000(t *testing.T) {
 	}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Group 2: Output Format Correctness
-// ═══════════════════════════════════════════════════════════════════════════
 
 func TestServerFormat_JSON_ValidNDJSON(t *testing.T) {
 	baseURL := setupMultiIndexServer(t)
@@ -829,9 +825,7 @@ func TestServerFormat_NDJSON_EqualsJSON(t *testing.T) {
 	}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Group 3: Ingest CLI Command
-// ═══════════════════════════════════════════════════════════════════════════
 
 func TestServerIngest_FromFile_ThenQueryReturnsData(t *testing.T) {
 	baseURL := newTestServer(t)
@@ -910,9 +904,7 @@ func TestServerIngest_WithSourceMetadata(t *testing.T) {
 	}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Group 4: Non-Query CLI Commands
-// ═══════════════════════════════════════════════════════════════════════════
 
 func TestServerStatus_AfterIngest_EventCountCorrect(t *testing.T) {
 	baseURL := newTestServer(t)
@@ -1132,9 +1124,7 @@ func TestServerSample_EventsHaveFields(t *testing.T) {
 	}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Group 5: Flags and Options
-// ═══════════════════════════════════════════════════════════════════════════
 
 func TestServerQuery_QuietFlag_NoStderr(t *testing.T) {
 	baseURL := setupMultiIndexServer(t)
@@ -1183,9 +1173,7 @@ func TestServerQuery_OutputToFile(t *testing.T) {
 	}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Group 6: Error Handling
-// ═══════════════════════════════════════════════════════════════════════════
 
 func TestServerQuery_ParseError_ReturnsError(t *testing.T) {
 	baseURL := newTestServer(t)
@@ -1217,9 +1205,7 @@ func TestServerQuery_IncompleteFromTo_ReturnsError(t *testing.T) {
 	}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Group 7: Multi-Index Cross-Queries
-// ═══════════════════════════════════════════════════════════════════════════
 
 func TestServerQuery_BackendIndex_JSONFields(t *testing.T) {
 	baseURL := setupMultiIndexServer(t)
@@ -1290,9 +1276,7 @@ func TestServerQuery_IndexIsolation_NoLeaks(t *testing.T) {
 	}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Group 8: SPL2 Pipeline Chaining (server mode)
-// ═══════════════════════════════════════════════════════════════════════════
 
 func TestServerQuery_Pipeline_WhereEvalStats(t *testing.T) {
 	baseURL := setupMultiIndexServer(t)

@@ -278,7 +278,6 @@ func (e *Engine) executeQuery(ctx context.Context, job *SearchJob, params QueryP
 		TimeRange:  [2]int64{earliest, latest},
 	}
 
-	// Check cache.
 	if cached, cacheErr := e.cache.Get(ctx, cacheKey); cacheErr != nil {
 		logger.Debug("cache get failed", "error", cacheErr)
 	} else if cached != nil {

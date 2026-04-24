@@ -14,7 +14,6 @@ func TestFields_AfterIngest_ContainsKnownFields(t *testing.T) {
 		t.Fatalf("fields command failed: %v", err)
 	}
 
-	// Parse NDJSON lines.
 	lines := strings.Split(strings.TrimSpace(stdout), "\n")
 	if len(lines) == 0 {
 		t.Fatal("expected at least one field in output")

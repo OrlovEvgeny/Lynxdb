@@ -29,7 +29,6 @@ func TestQueries_CRUD(t *testing.T) {
 		t.Fatalf("expected 0 queries, got %d", len(queries))
 	}
 
-	// Create.
 	body, _ := json.Marshal(map[string]interface{}{
 		"name": "error-search",
 		"q":    "FROM main | search \"error\"",
@@ -55,7 +54,6 @@ func TestQueries_CRUD(t *testing.T) {
 		t.Fatalf("name: %v", created["name"])
 	}
 
-	// Get.
 	resp3, err := http.Get(fmt.Sprintf("http://%s/api/v1/queries/%s", srv.Addr(), id))
 	if err != nil {
 		t.Fatal(err)
@@ -71,7 +69,6 @@ func TestQueries_CRUD(t *testing.T) {
 		t.Fatalf("q: %v", got["q"])
 	}
 
-	// Update.
 	updateBody, _ := json.Marshal(map[string]interface{}{
 		"name": "error-search-v2",
 		"q":    "FROM main | search \"error\" | head 100",
@@ -107,7 +104,6 @@ func TestQueries_CRUD(t *testing.T) {
 		t.Fatalf("expected 1 query, got %d", len(queries2))
 	}
 
-	// Delete.
 	delReq, _ := http.NewRequest("DELETE", fmt.Sprintf("http://%s/api/v1/queries/%s", srv.Addr(), id), http.NoBody)
 	resp6, err := http.DefaultClient.Do(delReq)
 	if err != nil {

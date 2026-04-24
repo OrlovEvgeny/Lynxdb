@@ -253,7 +253,6 @@ export function DashboardDetail({
 
   function handlePanelFormSave(panel: DashboardPanel) {
     if (editingPanel) {
-      // Update existing panel
       setUnsavedPanels((prev) =>
         prev.map((p) => (p.id === panel.id ? panel : p)),
       );

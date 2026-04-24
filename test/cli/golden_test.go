@@ -91,9 +91,7 @@ func TestGolden_Server(t *testing.T) {
 	}
 }
 
-// ============================================================================
 // Known bugs discovered by golden tests (all resolved — retained for history)
-// ============================================================================
 //
 // BUG 1 (FIXED): SelectCommand not implemented in pipeline builder.
 //   Fixed: pipeline.go:726 now handles *spl2.SelectCommand as project + rename.

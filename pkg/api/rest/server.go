@@ -154,7 +154,6 @@ func NewServer(cfg Config) (*Server, error) {
 		qStore = savedqueries.OpenInMemory()
 	}
 
-	// Initialize dashboards store.
 	var dStore *dashboards.DashboardStore
 	if cfg.DataDir != "" {
 		dStore, err = dashboards.OpenStore(cfg.DataDir)

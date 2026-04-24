@@ -91,7 +91,6 @@ func TestDeltaEncoder_Timestamps(t *testing.T) {
 		t.Fatalf("EncodeInt64s: %v", err)
 	}
 
-	// Check compression ratio.
 	rawSize := len(values) * 8
 	t.Logf("raw=%d, encoded=%d, ratio=%.2f", rawSize, len(data), float64(len(data))/float64(rawSize))
 

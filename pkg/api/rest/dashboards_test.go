@@ -55,7 +55,6 @@ func TestDashboards_CRUD(t *testing.T) {
 		t.Fatalf("expected 0 dashboards, got %d", len(dashes))
 	}
 
-	// Create.
 	body, _ := json.Marshal(validDashboardInput())
 	resp2, err := http.Post(fmt.Sprintf("http://%s/api/v1/dashboards", srv.Addr()), "application/json", bytes.NewReader(body))
 	if err != nil {
@@ -81,7 +80,6 @@ func TestDashboards_CRUD(t *testing.T) {
 		t.Fatalf("panels: %d", len(panels))
 	}
 
-	// Get.
 	resp3, err := http.Get(fmt.Sprintf("http://%s/api/v1/dashboards/%s", srv.Addr(), id))
 	if err != nil {
 		t.Fatal(err)
@@ -91,7 +89,6 @@ func TestDashboards_CRUD(t *testing.T) {
 		t.Fatalf("get status: %d", resp3.StatusCode)
 	}
 
-	// Update.
 	updateInput := validDashboardInput()
 	updateInput["name"] = "ops-overview-v2"
 	updateBody, _ := json.Marshal(updateInput)
@@ -113,7 +110,6 @@ func TestDashboards_CRUD(t *testing.T) {
 		t.Fatalf("updated name: %v", updated["name"])
 	}
 
-	// Delete.
 	delReq, _ := http.NewRequest("DELETE", fmt.Sprintf("http://%s/api/v1/dashboards/%s", srv.Addr(), id), http.NoBody)
 	resp5, err := http.DefaultClient.Do(delReq)
 	if err != nil {

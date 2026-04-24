@@ -44,7 +44,6 @@ func TestProjectionCache_HitMiss(t *testing.T) {
 		t.Error("expected cache miss for different row group")
 	}
 
-	// Check stats.
 	stats := pc.Stats()
 	if stats.Hits != 1 {
 		t.Errorf("expected 1 hit, got %d", stats.Hits)

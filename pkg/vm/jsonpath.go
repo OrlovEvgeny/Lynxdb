@@ -409,7 +409,6 @@ func jsonSet(input, path, value string) event.Value {
 	for i := 0; i < len(parts)-1; i++ {
 		next, ok := current[parts[i]]
 		if !ok {
-			// Create intermediate object.
 			newMap := make(map[string]interface{})
 			current[parts[i]] = newMap
 			current = newMap

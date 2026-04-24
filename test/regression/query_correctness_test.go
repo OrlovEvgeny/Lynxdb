@@ -5,9 +5,7 @@ import (
 	"testing"
 )
 
-// ═══════════════════════════════════════════════════════════════════════════════
 // SSH Dataset: OpenSSH_2k.log (1999 non-blank lines → 2000 events)
-// ═══════════════════════════════════════════════════════════════════════════════
 
 func TestRegression_SSH(t *testing.T) {
 	eng := sshEngine(t)
@@ -562,11 +560,9 @@ func TestRegression_SSH(t *testing.T) {
 	})
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
 // Sort Elimination Correctness: verify that optimizer sort elimination does not
 // change query results. These tests execute queries through the full engine
 // (parser → optimizer → pipeline) and check result correctness.
-// ═══════════════════════════════════════════════════════════════════════════════
 
 func TestRegression_SortElimination(t *testing.T) {
 	eng := sshEngine(t)
@@ -638,9 +634,7 @@ func TestRegression_SortElimination(t *testing.T) {
 	})
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
 // OpenStack Dataset: OpenStack_2k.log (1999 non-blank lines → 2000 events)
-// ═══════════════════════════════════════════════════════════════════════════════
 
 func TestRegression_OpenStack(t *testing.T) {
 	eng := openstackEngine(t)

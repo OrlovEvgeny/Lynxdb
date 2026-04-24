@@ -847,7 +847,6 @@ func TestSegmentHandleRefCounting(t *testing.T) {
 func TestEpochDrainDecrefsAllSegments(t *testing.T) {
 	e := newTestEngine(t)
 
-	// Create 3 segments.
 	sh1 := makeTestSegmentHandle("seg-A")
 	sh2 := makeTestSegmentHandle("seg-B")
 	sh3 := makeTestSegmentHandle("seg-C")

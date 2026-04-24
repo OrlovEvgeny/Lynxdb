@@ -47,7 +47,6 @@ func GenerateSelfSignedCert(dir string) (tls.Certificate, error) {
 		return tls.Certificate{}, fmt.Errorf("auth.GenerateSelfSignedCert: generate key: %w", err)
 	}
 
-	// Build serial number.
 	serialLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serial, err := rand.Int(rand.Reader, serialLimit)
 	if err != nil {

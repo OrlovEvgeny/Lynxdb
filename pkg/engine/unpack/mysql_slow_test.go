@@ -40,7 +40,6 @@ func TestMySQLSlowParser_Basic(t *testing.T) {
 		t.Errorf("connection_id: got %v, want 42", fields["connection_id"])
 	}
 
-	// Check float metrics
 	if fields["query_time"].AsFloat() != 3.456789 {
 		t.Errorf("query_time: got %v, want 3.456789", fields["query_time"])
 	}

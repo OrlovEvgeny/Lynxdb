@@ -399,7 +399,6 @@ func (m *Manager) Evaluate(configs map[string]model.IndexConfig) *EvaluateResult
 
 		age := now.Sub(seg.Meta.CreatedAt)
 
-		// Check for expiration.
 		if age >= cfg.RetentionPeriod {
 			result.Expired = append(result.Expired, seg.Meta.ID)
 

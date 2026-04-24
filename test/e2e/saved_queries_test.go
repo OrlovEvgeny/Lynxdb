@@ -48,7 +48,6 @@ func TestE2E_SavedQueries_CRUD(t *testing.T) {
 		}
 	}
 
-	// Update.
 	input.Name = "test-saved-query-updated"
 	updated, err := h.Client().UpdateSavedQuery(ctx, sqID, input)
 	if err != nil {
@@ -58,7 +57,6 @@ func TestE2E_SavedQueries_CRUD(t *testing.T) {
 		t.Errorf("expected updated name, got %s", updated.Name)
 	}
 
-	// Delete.
 	err = h.Client().DeleteSavedQuery(ctx, sqID)
 	if err != nil {
 		t.Fatalf("DeleteSavedQuery: %v", err)

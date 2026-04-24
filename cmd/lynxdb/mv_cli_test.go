@@ -80,7 +80,6 @@ func TestMVCreateAndList(t *testing.T) {
 func TestMVStatus(t *testing.T) {
 	baseURL := setupDiskServerWithData(t)
 
-	// Create first.
 	_, _, err := runCmd(t, "--server", baseURL, "mv", "create",
 		"mv_status_test",
 		"level=error | stats count by level")
@@ -88,7 +87,6 @@ func TestMVStatus(t *testing.T) {
 		t.Fatalf("mv create failed: %v", err)
 	}
 
-	// Check status.
 	stdout, _, err := runCmd(t, "--server", baseURL, "mv", "status",
 		"--format", "json", "mv_status_test")
 	if err != nil {
@@ -112,7 +110,6 @@ func TestMVStatus(t *testing.T) {
 func TestMVDrop_Force(t *testing.T) {
 	baseURL := setupDiskServerWithData(t)
 
-	// Create.
 	_, _, err := runCmd(t, "--server", baseURL, "mv", "create",
 		"mv_drop_test",
 		"level=error | stats count")
