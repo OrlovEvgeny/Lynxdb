@@ -8,9 +8,10 @@
 </div>
 
 <p align="center">
-  <a href="https://github.com/lynxbase/lynxdb/releases"><img src="https://img.shields.io/github/v/release/lynxbase/lynxdb?color=brightgreen&display_name=tag" alt="Latest Release"></a>
-  <a href="https://github.com/lynxbase/lynxdb/actions/workflows/ci.yaml"><img src="https://img.shields.io/github/actions/workflow/status/lynxbase/lynxdb/ci.yaml?branch=main&label=build" alt="Build Status"></a>
-  <a href="https://docs.lynxdb.org/"><img src="https://img.shields.io/badge/docs-lynxdb.org-blue" alt="Docs"></a>
+  <a href="https://docs.lynxdb.org/"><img src="https://img.shields.io/badge/Docs-blue.svg?style=for-the-badge&logo=gitbook&logoColor=white" alt="Documentation"></a>
+  <a href="https://github.com/lynxbase/lynxdb/releases"><img src="https://img.shields.io/github/v/release/lynxbase/lynxdb?style=for-the-badge&color=brightgreen&display_name=tag" alt="Latest Release"></a>
+  <a href="https://github.com/lynxbase/lynxdb/actions/workflows/ci.yaml"><img src="https://img.shields.io/github/actions/workflow/status/lynxbase/lynxdb/ci.yaml?branch=main&style=for-the-badge&label=build" alt="Build Status"></a>
+  <a href="https://discord.gg/RgggCFdgWK"><img src="https://img.shields.io/badge/discord-5865F2.svg?style=for-the-badge&logo=discord&logoColor=white" alt="Join Discord"></a>
 </p>
 
 Log analytics in a single binary. No dependencies. Lynx Flow query language.
