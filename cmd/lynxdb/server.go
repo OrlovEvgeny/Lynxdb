@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"log/slog"
+	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -34,6 +35,12 @@ var (
 	flagNoUI           bool
 	flagOpenUI         bool
 	flagProfileRuntime bool
+	flagSyslog         string
+	flagSyslogUDP      string
+	flagSyslogTCP      string
+	flagSyslogTLS      bool
+	flagSyslogParser   string
+	flagSyslogIndex    string
 
 	// Cluster flags.
 	flagClusterEnabled  bool
@@ -68,6 +75,12 @@ func init() {
 	serverCmd.Flags().BoolVar(&flagNoUI, "no-ui", false, "Disable embedded Web UI")
 	serverCmd.Flags().BoolVar(&flagOpenUI, "ui", false, "Auto-open Web UI in browser after startup")
 	serverCmd.Flags().BoolVar(&flagProfileRuntime, "profile-runtime", false, "Enable mutex and block profiling (~2-5% overhead)")
+	serverCmd.Flags().StringVar(&flagSyslog, "syslog", "", "Enable UDP and TCP syslog on address (default port 5514 when omitted)")
+	serverCmd.Flags().StringVar(&flagSyslogUDP, "syslog-udp", "", "Enable UDP syslog on address")
+	serverCmd.Flags().StringVar(&flagSyslogTCP, "syslog-tcp", "", "Enable TCP syslog on address")
+	serverCmd.Flags().BoolVar(&flagSyslogTLS, "syslog-tls", false, "Wrap TCP syslog with server TLS (default port 6514 when omitted)")
+	serverCmd.Flags().StringVar(&flagSyslogParser, "syslog-parser", "", "Syslog parser dialect: auto, rfc5424, rfc3164, raw")
+	serverCmd.Flags().StringVar(&flagSyslogIndex, "syslog-index", "", "Target index for syslog events")
 
 	// Cluster flags.
 	serverCmd.Flags().BoolVar(&flagClusterEnabled, "cluster.enabled", false, "Enable cluster mode")
@@ -94,8 +107,36 @@ func runServer(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := cfg.Validate(); err != nil {
-		return err
+	// Apply syslog CLI flag overrides.
+	if cmd.Flags().Changed("syslog") {
+		addr := normalizeSyslogAddr(flagSyslog, "5514")
+		cfg.Syslog.UDP = addr
+		cfg.Syslog.TCP = addr
+		cliOverrides = append(cliOverrides, "--syslog")
+	}
+	if cmd.Flags().Changed("syslog-udp") {
+		cfg.Syslog.UDP = normalizeSyslogAddr(flagSyslogUDP, "5514")
+		cliOverrides = append(cliOverrides, "--syslog-udp")
+	}
+	if cmd.Flags().Changed("syslog-tcp") {
+		defaultPort := "5514"
+		if cfg.Syslog.TLS || flagSyslogTLS {
+			defaultPort = "6514"
+		}
+		cfg.Syslog.TCP = normalizeSyslogAddr(flagSyslogTCP, defaultPort)
+		cliOverrides = append(cliOverrides, "--syslog-tcp")
+	}
+	if cmd.Flags().Changed("syslog-tls") {
+		cfg.Syslog.TLS = flagSyslogTLS
+		cliOverrides = append(cliOverrides, "--syslog-tls")
+	}
+	if cmd.Flags().Changed("syslog-parser") {
+		cfg.Syslog.Parser = flagSyslogParser
+		cliOverrides = append(cliOverrides, "--syslog-parser")
+	}
+	if cmd.Flags().Changed("syslog-index") {
+		cfg.Syslog.Index = flagSyslogIndex
+		cliOverrides = append(cliOverrides, "--syslog-index")
 	}
 
 	// Apply cluster CLI flag overrides.
@@ -123,6 +164,10 @@ func runServer(cmd *cobra.Command, args []string) error {
 	if cmd.Flags().Changed("no-ui") {
 		cfg.NoUI = flagNoUI
 		cliOverrides = append(cliOverrides, "--no-ui")
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return err
 	}
 
 	if cmd.Flags().Changed("auth") {
@@ -187,6 +232,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 		Query:         cfg.Query,
 		Ingest:        cfg.Ingest,
 		HTTP:          cfg.HTTP,
+		Syslog:        cfg.Syslog,
 		Server:        cfg.Server,
 		Views:         cfg.Views,
 		BufferManager: cfg.BufferManager,
@@ -322,6 +368,26 @@ func parseLogLevel(s string) slog.Level {
 	default:
 		return slog.LevelInfo
 	}
+}
+
+func normalizeSyslogAddr(addr, defaultPort string) string {
+	addr = strings.TrimSpace(addr)
+	if addr == "" {
+		return ":" + defaultPort
+	}
+	if _, _, err := net.SplitHostPort(addr); err == nil {
+		return addr
+	}
+	if strings.HasPrefix(addr, ":") {
+		return addr + defaultPort
+	}
+	if _, err := strconv.Atoi(addr); err == nil {
+		return ":" + addr
+	}
+	if strings.Contains(addr, ":") {
+		return addr
+	}
+	return net.JoinHostPort(addr, defaultPort)
 }
 
 // bootstrapAuth opens the key store and generates a root key if none exist.

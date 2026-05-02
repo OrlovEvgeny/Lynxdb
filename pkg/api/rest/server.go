@@ -16,6 +16,8 @@ import (
 	"github.com/lynxbase/lynxdb/internal/webui"
 	"github.com/lynxbase/lynxdb/pkg/auth"
 	"github.com/lynxbase/lynxdb/pkg/config"
+	"github.com/lynxbase/lynxdb/pkg/event"
+	syslogrecv "github.com/lynxbase/lynxdb/pkg/ingest/receiver/syslog"
 	"github.com/lynxbase/lynxdb/pkg/planner"
 	"github.com/lynxbase/lynxdb/pkg/server"
 	"github.com/lynxbase/lynxdb/pkg/spl2"
@@ -44,6 +46,7 @@ type Server struct {
 	activeTailSessions atomic.Int64 // current number of active tail SSE sessions
 	degraded           atomic.Bool  // true when a persistent store fell back to in-memory
 	tlsConfig          *tls.Config  // non-nil when TLS is enabled
+	syslogReceiver     *syslogrecv.Receiver
 	levelVar           *slog.LevelVar
 	logger             *slog.Logger
 }
@@ -64,6 +67,7 @@ type Config struct {
 	Query         config.QueryConfig
 	Ingest        config.IngestConfig
 	HTTP          config.HTTPConfig
+	Syslog        config.SyslogConfig
 	Tail          config.TailConfig
 	Server        config.ServerConfig
 	Views         config.ViewsConfig
@@ -129,6 +133,7 @@ func NewServer(cfg Config) (*Server, error) {
 		if cfg.HTTP.IdleTimeout > 0 {
 			runtimeCfg.HTTP = cfg.HTTP
 		}
+		runtimeCfg.Syslog = cfg.Syslog
 	}
 
 	s := &Server{
@@ -157,6 +162,25 @@ func NewServer(cfg Config) (*Server, error) {
 	// pipeline, memory, rows) and increments segment-skip counters.
 	promMetrics := NewPrometheusMetrics()
 	engine.SetOnQueryComplete(promMetrics.RecordQuery)
+
+	if cfg.Syslog.Enabled() {
+		tlsCfg := cfg.TLSConfig
+		if !cfg.Syslog.TLS {
+			tlsCfg = nil
+		}
+		syslogReceiver, err := syslogrecv.New(
+			cfg.Syslog,
+			engineSink{engine: engine},
+			ingestPipelineForConfig(cfg.Ingest),
+			tlsCfg,
+			cfg.Logger,
+			syslogrecv.NewMetrics(promMetrics.Registry()),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("syslog receiver: %w", err)
+		}
+		s.syslogReceiver = syslogReceiver
+	}
 
 	mux := http.NewServeMux()
 
@@ -356,10 +380,28 @@ func (s *Server) Start(ctx context.Context) error {
 		return err
 	}
 
+	if s.syslogReceiver != nil {
+		go func() {
+			if err := s.syslogReceiver.Start(ctx); err != nil {
+				s.engine.Logger().Error("syslog receiver stopped with error", "error", err)
+			}
+		}()
+		s.syslogReceiver.WaitReady()
+		if err := s.syslogReceiver.ReadyError(); err != nil {
+			if shutErr := s.engine.Shutdown(5 * time.Second); shutErr != nil {
+				slog.Error("engine shutdown failed after syslog listen error", "error", shutErr)
+			}
+			return fmt.Errorf("syslog: %w", err)
+		}
+	}
+
 	var lc net.ListenConfig
 	ln, err := lc.Listen(ctx, "tcp", s.httpServer.Addr)
 	if err != nil {
 		// Engine was started but we can't listen — shut it down.
+		if s.syslogReceiver != nil {
+			s.syslogReceiver.Stop()
+		}
 		if shutErr := s.engine.Shutdown(5 * time.Second); shutErr != nil {
 			slog.Error("engine shutdown failed after listen error", "error", shutErr)
 		}
@@ -386,6 +428,9 @@ func (s *Server) Start(ctx context.Context) error {
 
 		// Shutdown ordering: reject ingests → drain HTTP → flush storage.
 		s.engine.PrepareShutdown()
+		if s.syslogReceiver != nil {
+			s.syslogReceiver.Stop()
+		}
 
 		shutdownTimeout := s.currentShutdownTimeout()
 		s.engine.Logger().Info("shutting down: draining in-flight requests", "timeout", shutdownTimeout)
@@ -414,6 +459,14 @@ func (s *Server) Start(ctx context.Context) error {
 	<-shutdownDone
 
 	return nil
+}
+
+type engineSink struct {
+	engine *server.Engine
+}
+
+func (s engineSink) Write(events []*event.Event) error {
+	return s.engine.IngestContext(context.Background(), events)
 }
 
 // WaitReady blocks until the server has completed initialization and is ready.

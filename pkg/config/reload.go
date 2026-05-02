@@ -20,6 +20,12 @@ var hotReloadableExactFields = map[string]struct{}{
 	"ingest.max_batch_size":            {},
 	"ingest.max_line_bytes":            {},
 	"http.shutdown_timeout":            {},
+	"syslog.index":                     {},
+	"syslog.sourcetype":                {},
+	"syslog.default_timezone":          {},
+	"syslog.default_hostname":          {},
+	"syslog.batch_size":                {},
+	"syslog.batch_timeout":             {},
 }
 
 var hotReloadablePrefixes = []string{

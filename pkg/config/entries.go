@@ -154,6 +154,25 @@ func EntriesWithCLI(configPath string, cli []CLIOverride) []Entry {
 	durationEntry("http.read_header_timeout", cfg.HTTP.ReadHeaderTimeout, dflt.HTTP.ReadHeaderTimeout, fileCfg.HTTP.ReadHeaderTimeout, "LYNXDB_HTTP_READ_HEADER_TIMEOUT")
 	add("http.rate_limit", fmt.Sprintf("%.2f", cfg.HTTP.RateLimit), fmt.Sprintf("%.2f", dflt.HTTP.RateLimit), fmt.Sprintf("%.2f", fileCfg.HTTP.RateLimit), "LYNXDB_HTTP_RATE_LIMIT")
 
+	// Syslog.
+	add("syslog.udp", cfg.Syslog.UDP, dflt.Syslog.UDP, fileCfg.Syslog.UDP, "LYNXDB_SYSLOG_UDP")
+	add("syslog.tcp", cfg.Syslog.TCP, dflt.Syslog.TCP, fileCfg.Syslog.TCP, "LYNXDB_SYSLOG_TCP")
+	add("syslog.tls", strconv.FormatBool(cfg.Syslog.TLS), strconv.FormatBool(dflt.Syslog.TLS), strconv.FormatBool(fileCfg.Syslog.TLS), "LYNXDB_SYSLOG_TLS")
+	add("syslog.parser", cfg.Syslog.Parser, dflt.Syslog.Parser, fileCfg.Syslog.Parser, "LYNXDB_SYSLOG_PARSER")
+	add("syslog.framing", cfg.Syslog.Framing, dflt.Syslog.Framing, fileCfg.Syslog.Framing, "LYNXDB_SYSLOG_FRAMING")
+	add("syslog.trailer", cfg.Syslog.Trailer, dflt.Syslog.Trailer, fileCfg.Syslog.Trailer, "LYNXDB_SYSLOG_TRAILER")
+	add("syslog.default_timezone", cfg.Syslog.DefaultTimezone, dflt.Syslog.DefaultTimezone, fileCfg.Syslog.DefaultTimezone, "LYNXDB_SYSLOG_DEFAULT_TIMEZONE")
+	add("syslog.default_hostname", cfg.Syslog.DefaultHostname, dflt.Syslog.DefaultHostname, fileCfg.Syslog.DefaultHostname, "LYNXDB_SYSLOG_DEFAULT_HOSTNAME")
+	add("syslog.index", cfg.Syslog.Index, dflt.Syslog.Index, fileCfg.Syslog.Index, "LYNXDB_SYSLOG_INDEX")
+	add("syslog.sourcetype", cfg.Syslog.SourceType, dflt.Syslog.SourceType, fileCfg.Syslog.SourceType, "LYNXDB_SYSLOG_SOURCETYPE")
+	add("syslog.use_peer_as_source", strconv.FormatBool(cfg.Syslog.UsePeerAsSource), strconv.FormatBool(dflt.Syslog.UsePeerAsSource), strconv.FormatBool(fileCfg.Syslog.UsePeerAsSource), "LYNXDB_SYSLOG_USE_PEER_AS_SOURCE")
+	add("syslog.max_message_bytes", strconv.Itoa(cfg.Syslog.MaxMessageBytes), strconv.Itoa(dflt.Syslog.MaxMessageBytes), strconv.Itoa(fileCfg.Syslog.MaxMessageBytes), "LYNXDB_SYSLOG_MAX_MESSAGE_BYTES")
+	add("syslog.udp_read_buffer", cfg.Syslog.UDPReadBuffer.String(), dflt.Syslog.UDPReadBuffer.String(), fileCfg.Syslog.UDPReadBuffer.String(), "LYNXDB_SYSLOG_UDP_READ_BUFFER")
+	add("syslog.tcp_idle_timeout", cfg.Syslog.TCPIdleTimeout.String(), dflt.Syslog.TCPIdleTimeout.String(), fileCfg.Syslog.TCPIdleTimeout.String(), "LYNXDB_SYSLOG_TCP_IDLE_TIMEOUT")
+	add("syslog.tcp_max_connections", strconv.Itoa(cfg.Syslog.TCPMaxConns), strconv.Itoa(dflt.Syslog.TCPMaxConns), strconv.Itoa(fileCfg.Syslog.TCPMaxConns), "LYNXDB_SYSLOG_TCP_MAX_CONNECTIONS")
+	add("syslog.batch_size", strconv.Itoa(cfg.Syslog.BatchSize), strconv.Itoa(dflt.Syslog.BatchSize), strconv.Itoa(fileCfg.Syslog.BatchSize), "LYNXDB_SYSLOG_BATCH_SIZE")
+	add("syslog.batch_timeout", cfg.Syslog.BatchTimeout.String(), dflt.Syslog.BatchTimeout.String(), fileCfg.Syslog.BatchTimeout.String(), "LYNXDB_SYSLOG_BATCH_TIMEOUT")
+
 	// Tail.
 	add("tail.max_concurrent_sessions", strconv.Itoa(cfg.Tail.MaxConcurrentSessions), strconv.Itoa(dflt.Tail.MaxConcurrentSessions), strconv.Itoa(fileCfg.Tail.MaxConcurrentSessions), "LYNXDB_TAIL_MAX_CONCURRENT_SESSIONS")
 	durationEntry("tail.max_session_duration", cfg.Tail.MaxSessionDuration, dflt.Tail.MaxSessionDuration, fileCfg.Tail.MaxSessionDuration, "LYNXDB_TAIL_MAX_SESSION_DURATION")

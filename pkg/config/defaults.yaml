@@ -79,6 +79,26 @@
 #   read_header_timeout: 10s         # Max time allowed to read request headers
 #   rate_limit: 0                    # Requests per second per IP (0 = unlimited)
 
+# Native syslog receiver configuration.
+# syslog:
+#   udp:                              # UDP listen address, e.g. ":5514" (empty = disabled)
+#   tcp:                              # TCP listen address, e.g. ":5514" (empty = disabled)
+#   tls: false                        # Wrap TCP with server TLS config
+#   parser: auto                      # auto, rfc5424, rfc3164, raw
+#   framing: auto                     # auto, octet-counting, non-transparent
+#   trailer: auto                     # auto, lf, nul, crlf
+#   default_timezone: Local           # Timezone for RFC 3164 timestamps
+#   default_hostname:                 # Hostname used when wire value is missing/"-"
+#   index: main                       # Target index
+#   sourcetype: syslog                # Base sourcetype, suffixed by parsed dialect
+#   use_peer_as_source: true          # Set source to udp://peer or tcp://peer
+#   max_message_bytes: 65536          # Hard cap for a single syslog message
+#   udp_read_buffer: 2mb              # UDP socket receive buffer
+#   tcp_idle_timeout: 5m              # TCP connection idle timeout
+#   tcp_max_connections: 1000         # Max concurrent TCP syslog connections
+#   batch_size: 1000                  # Flush after this many events
+#   batch_timeout: 200ms              # Flush after this much idle time
+
 # Live tail session configuration.
 # tail:
 #   max_concurrent_sessions: 100     # Max concurrent tail sessions (0 = unlimited)

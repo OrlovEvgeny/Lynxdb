@@ -65,6 +65,9 @@ func (c *Config) Validate() error {
 	if err := c.HTTP.validate(); err != nil {
 		return err
 	}
+	if err := c.Syslog.validate(); err != nil {
+		return err
+	}
 	if err := c.Tail.validate(); err != nil {
 		return err
 	}
@@ -277,6 +280,60 @@ func (i *IngestConfig) validate() error {
 
 	if i.DedupEnabled && i.DedupCapacity < 1 {
 		return validationErr("ingest", "dedup_capacity", fmt.Sprintf("%d", i.DedupCapacity), "must be at least 1 when dedup_enabled is true")
+	}
+
+	return nil
+}
+
+func (s *SyslogConfig) validate() error {
+	if s.UDP != "" {
+		if _, _, err := net.SplitHostPort(s.UDP); err != nil {
+			return validationErr("syslog", "udp", s.UDP, "must be a valid host:port address")
+		}
+	}
+	if s.TCP != "" {
+		if _, _, err := net.SplitHostPort(s.TCP); err != nil {
+			return validationErr("syslog", "tcp", s.TCP, "must be a valid host:port address")
+		}
+	}
+
+	switch strings.ToLower(s.Parser) {
+	case "", "auto", "rfc5424", "rfc3164", "raw":
+	default:
+		return validationErr("syslog", "parser", s.Parser, "must be auto, rfc5424, rfc3164, or raw")
+	}
+	switch strings.ToLower(s.Framing) {
+	case "", "auto", "octet-counting", "non-transparent":
+	default:
+		return validationErr("syslog", "framing", s.Framing, "must be auto, octet-counting, or non-transparent")
+	}
+	switch strings.ToLower(s.Trailer) {
+	case "", "auto", "lf", "nul", "crlf":
+	default:
+		return validationErr("syslog", "trailer", s.Trailer, "must be auto, lf, nul, or crlf")
+	}
+	if s.DefaultTimezone != "" && s.DefaultTimezone != "Local" {
+		if _, err := time.LoadLocation(s.DefaultTimezone); err != nil {
+			return validationErr("syslog", "default_timezone", s.DefaultTimezone, "must be Local or a valid IANA timezone")
+		}
+	}
+	if s.MaxMessageBytes != 0 && s.MaxMessageBytes < 1024 {
+		return validationErr("syslog", "max_message_bytes", fmt.Sprintf("%d", s.MaxMessageBytes), "must be at least 1024 bytes")
+	}
+	if s.UDPReadBuffer < 0 {
+		return validationErr("syslog", "udp_read_buffer", s.UDPReadBuffer.String(), "must not be negative")
+	}
+	if s.TCPIdleTimeout.Duration() < 0 {
+		return validationErr("syslog", "tcp_idle_timeout", s.TCPIdleTimeout.String(), "must not be negative")
+	}
+	if s.TCPMaxConns < 0 {
+		return validationErr("syslog", "tcp_max_connections", fmt.Sprintf("%d", s.TCPMaxConns), "must not be negative")
+	}
+	if s.BatchSize < 0 {
+		return validationErr("syslog", "batch_size", fmt.Sprintf("%d", s.BatchSize), "must not be negative")
+	}
+	if s.BatchTimeout.Duration() < 0 {
+		return validationErr("syslog", "batch_timeout", s.BatchTimeout.String(), "must not be negative")
 	}
 
 	return nil
