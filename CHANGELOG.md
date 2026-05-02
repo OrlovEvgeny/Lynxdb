@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Storage engine**: Columnar segment format (`.lsg` V2) with delta-varint timestamps, LZ4 compression, dictionary-encoded strings, Gorilla-encoded floats.
 - **Full-text search**: FST-based inverted index with roaring bitmap posting lists and bloom filters for segment skipping.
-- **Write-ahead log (WAL)**: Append-only WAL with configurable sync policy and crash recovery.
+- **Direct-to-part ingest**: `AsyncBatcher` buffers events in memory and flushes immutable `.lsg` parts via atomic rename; configurable `fsync` policy per part write.
 - **Compaction**: Size-tiered compaction (L0 -> L1 -> L2) with rate limiting.
 - **Tiered storage**: Hot (SSD) -> Warm (S3) -> Cold (Glacier) with automatic policy-driven tiering and local segment cache.
 - **SPL2 query language**: Full parser with 20+ commands, 15+ aggregation functions, 20+ eval functions, CTEs, and subsearches.

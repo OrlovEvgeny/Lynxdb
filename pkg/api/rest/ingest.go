@@ -357,7 +357,7 @@ func (s *Server) processBatched(w http.ResponseWriter, r *http.Request, buildEve
 				continue // pipeline error: skip this batch, try next
 			}
 			if err := s.engine.IngestContext(r.Context(), processed); err != nil {
-				// Retry on WAL backpressure — the ring buffer may drain within
+				// Retry on batcher backpressure — the ring buffer may drain within
 				// one flush cycle (100ms). Three retries at 50ms intervals covers
 				// one full flush cycle, turning transient backpressure into a brief
 				// pause instead of permanent data loss.
@@ -419,7 +419,7 @@ func (s *Server) processBatched(w http.ResponseWriter, r *http.Request, buildEve
 		if err != nil {
 			failed += len(batch)
 		} else if ingestErr := s.engine.IngestContext(r.Context(), processed); ingestErr != nil {
-			// Retry on WAL backpressure (same logic as main loop).
+			// Retry on batcher backpressure (same logic as main loop).
 			retried := false
 			if errors.Is(ingestErr, part.ErrTooManyParts) {
 				for attempt := 0; attempt < 3; attempt++ {

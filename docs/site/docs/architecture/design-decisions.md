@@ -234,6 +234,14 @@ The core tradeoff remains the same: prefer a storage path specialized for immuta
 - Segment writer: columnar encoding + indexing
 - Compaction: merge small segments into large ones
 
+### Why no WAL?
+
+A traditional WAL adds latency to every write (fsync per commit) and complexity to recovery (replay on startup). For log analytics, neither tradeoff is worth it:
+
+- **Latency**: WAL fsyncs serialise ingestion. LynxDB's batcher absorbs bursts and writes parts in bulk, achieving higher throughput with the same disk.
+- **Complexity**: A WAL requires replay logic, truncation handling, and cross-crash consistency guarantees. LynxDB's crash recovery is a simple filesystem scan — delete stale `tmp_*` files and rebuild the registry from surviving `.lsg` parts.
+- **Accepted data window**: Events buffered in the `AsyncBatcher` are in memory and can be lost on crash. This is the same tradeoff [ClickHouse makes](https://github.com/ClickHouse/ClickHouse/issues/64906) — by default, ClickHouse does not fsync after insert, and even with async inserts enabled, `wait_for_async_insert = 0` acknowledges data before it reaches disk. For log workloads, losing the last few seconds of buffered events is an acceptable tradeoff for higher throughput.
+
 ## Related
 
 - [Architecture Overview](/docs/architecture/overview) -- how these decisions manifest in the system

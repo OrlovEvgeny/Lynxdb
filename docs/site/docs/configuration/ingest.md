@@ -83,7 +83,7 @@ The current ingest path does not write to a WAL. Instead:
 3. the part is optionally `fsync`'d
 4. the file is atomically renamed into place
 
-Events that have been accepted but not yet flushed are not durable.
+Events that have been accepted but not yet flushed are not durable. This is a deliberate tradeoff for log analytics workloads — losing the last few seconds of buffered events on a crash is acceptable in exchange for significantly higher ingest throughput. [ClickHouse follows the same approach](https://clickhouse.com/docs/en/operations/settings/settings#async_insert): by default, inserts are acknowledged after writing to the OS page cache (not disk), and the `wait_for_async_insert = 0` mode even acknowledges before the buffer flush, accepting silent data loss. For at-least-once delivery, enable client-side retries on connection errors.
 
 ### `ingest.fsync`
 

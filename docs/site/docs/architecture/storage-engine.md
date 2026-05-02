@@ -56,6 +56,8 @@ Startup recovery is filesystem-driven:
 
 This model has an important durability tradeoff: events accepted into the in-memory batcher are not durable until the part write commits. If the process or host fails before the flush completes, those buffered events can be lost. Clients that need at-least-once delivery should retry on connection loss or other uncertain outcomes.
 
+This is a deliberate design choice, not a bug. LynxDB targets log analytics workloads where losing the last few seconds of buffered events on a crash is an acceptable tradeoff for significantly higher ingest throughput. This is the same tradeoff that [ClickHouse makes by default](https://clickhouse.com/docs/en/operations/settings/settings#async_insert) — inserts write to the OS page cache first, and data in the cache can be lost on power failure. ClickHouse even provides a `wait_for_async_insert = 0` "fire-and-forget" mode where data is acknowledged before it reaches disk, accepting silent data loss in exchange for maximum throughput. LynxDB's `AsyncBatcher` follows the same philosophy: log data is high-volume and append-only, and the cost of a brief data gap on crash is far lower than the cost of synchronously fsync-ing every event.
+
 ## Part Files (`.lsg`)
 
 Parts are the primary storage unit. Each part is a self-contained columnar `.lsg` file with:

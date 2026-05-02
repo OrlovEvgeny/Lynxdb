@@ -217,7 +217,7 @@ func printIngestProgress(totalLines int, bytesRead, fileSize int64, start time.T
 
 // reportBatchResult prints a per-batch warning when events were truncated or failed.
 // Truncation means the server's MaxBytesReader cut the request body short.
-// Failures mean events were rejected (e.g., WAL backpressure) but the body was intact.
+// Failures mean events were rejected (e.g., batcher backpressure) but the body was intact.
 func reportBatchResult(result *client.IngestResult, sent, batchNum int) {
 	if result.Truncated {
 		printWarning("Server truncated request body in batch %d: accepted %s of %s events. "+
