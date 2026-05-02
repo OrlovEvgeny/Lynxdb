@@ -20,6 +20,7 @@ type Config struct {
 	Query         QueryConfig         `yaml:"query"          json:"query"`
 	Ingest        IngestConfig        `yaml:"ingest"         json:"ingest"`
 	HTTP          HTTPConfig          `yaml:"http"           json:"http"`
+	Syslog        SyslogConfig        `yaml:"syslog"         json:"syslog"`
 	Tail          TailConfig          `yaml:"tail"           json:"tail"`
 	TLS           TLSConfig           `yaml:"tls"            json:"tls"`
 	Auth          AuthConfig          `yaml:"auth"           json:"auth"`
@@ -238,6 +239,32 @@ type IngestConfig struct {
 	DedupCapacity int `yaml:"dedup_capacity" json:"dedup_capacity"`
 }
 
+// SyslogConfig configures the native syslog TCP/UDP receiver.
+type SyslogConfig struct {
+	UDP             string   `yaml:"udp"                 json:"udp"`
+	TCP             string   `yaml:"tcp"                 json:"tcp"`
+	TLS             bool     `yaml:"tls"                 json:"tls"`
+	Parser          string   `yaml:"parser"              json:"parser"`
+	Framing         string   `yaml:"framing"             json:"framing"`
+	Trailer         string   `yaml:"trailer"             json:"trailer"`
+	DefaultTimezone string   `yaml:"default_timezone"    json:"default_timezone"`
+	DefaultHostname string   `yaml:"default_hostname"    json:"default_hostname"`
+	Index           string   `yaml:"index"               json:"index"`
+	SourceType      string   `yaml:"sourcetype"          json:"sourcetype"`
+	UsePeerAsSource bool     `yaml:"use_peer_as_source"  json:"use_peer_as_source"`
+	MaxMessageBytes int      `yaml:"max_message_bytes"   json:"max_message_bytes"`
+	UDPReadBuffer   ByteSize `yaml:"udp_read_buffer"     json:"udp_read_buffer"`
+	TCPIdleTimeout  Duration `yaml:"tcp_idle_timeout"    json:"tcp_idle_timeout"`
+	TCPMaxConns     int      `yaml:"tcp_max_connections" json:"tcp_max_connections"`
+	BatchSize       int      `yaml:"batch_size"          json:"batch_size"`
+	BatchTimeout    Duration `yaml:"batch_timeout"       json:"batch_timeout"`
+}
+
+// Enabled reports whether any syslog listener is configured.
+func (s SyslogConfig) Enabled() bool {
+	return s.UDP != "" || s.TCP != ""
+}
+
 // HTTPConfig holds HTTP server parameters.
 type HTTPConfig struct {
 	IdleTimeout       time.Duration `yaml:"idle_timeout"              json:"idle_timeout"`
@@ -396,6 +423,22 @@ func DefaultConfig() *Config {
 			ShutdownTimeout:   30 * time.Second,
 			ReadHeaderTimeout: 10 * time.Second,
 			RateLimit:         0, // unlimited by default; opt-in per deployment
+		},
+
+		Syslog: SyslogConfig{
+			Parser:          "auto",
+			Framing:         "auto",
+			Trailer:         "auto",
+			DefaultTimezone: "Local",
+			Index:           "main",
+			SourceType:      "syslog",
+			UsePeerAsSource: true,
+			MaxMessageBytes: 65536,
+			UDPReadBuffer:   2 * MB,
+			TCPIdleTimeout:  Duration(5 * time.Minute),
+			TCPMaxConns:     1000,
+			BatchSize:       1000,
+			BatchTimeout:    Duration(200 * time.Millisecond),
 		},
 
 		Tail: TailConfig{

@@ -520,6 +520,159 @@ var envBindings = []envBinding{
 		},
 		func(c *Config) string { return fmt.Sprintf("%.2f", c.HTTP.RateLimit) }},
 
+	// Syslog
+	{"LYNXDB_SYSLOG_UDP", "syslog.udp",
+		func(c *Config, v string) error {
+			c.Syslog.UDP = v
+
+			return nil
+		},
+		func(c *Config) string { return c.Syslog.UDP }},
+	{"LYNXDB_SYSLOG_TCP", "syslog.tcp",
+		func(c *Config, v string) error {
+			c.Syslog.TCP = v
+
+			return nil
+		},
+		func(c *Config) string { return c.Syslog.TCP }},
+	{"LYNXDB_SYSLOG_TLS", "syslog.tls",
+		func(c *Config, v string) error {
+			b, err := strconv.ParseBool(v)
+			if err != nil {
+				return err
+			}
+			c.Syslog.TLS = b
+
+			return nil
+		},
+		func(c *Config) string { return strconv.FormatBool(c.Syslog.TLS) }},
+	{"LYNXDB_SYSLOG_PARSER", "syslog.parser",
+		func(c *Config, v string) error {
+			c.Syslog.Parser = v
+
+			return nil
+		},
+		func(c *Config) string { return c.Syslog.Parser }},
+	{"LYNXDB_SYSLOG_FRAMING", "syslog.framing",
+		func(c *Config, v string) error {
+			c.Syslog.Framing = v
+
+			return nil
+		},
+		func(c *Config) string { return c.Syslog.Framing }},
+	{"LYNXDB_SYSLOG_TRAILER", "syslog.trailer",
+		func(c *Config, v string) error {
+			c.Syslog.Trailer = v
+
+			return nil
+		},
+		func(c *Config) string { return c.Syslog.Trailer }},
+	{"LYNXDB_SYSLOG_DEFAULT_TIMEZONE", "syslog.default_timezone",
+		func(c *Config, v string) error {
+			c.Syslog.DefaultTimezone = v
+
+			return nil
+		},
+		func(c *Config) string { return c.Syslog.DefaultTimezone }},
+	{"LYNXDB_SYSLOG_DEFAULT_HOSTNAME", "syslog.default_hostname",
+		func(c *Config, v string) error {
+			c.Syslog.DefaultHostname = v
+
+			return nil
+		},
+		func(c *Config) string { return c.Syslog.DefaultHostname }},
+	{"LYNXDB_SYSLOG_INDEX", "syslog.index",
+		func(c *Config, v string) error {
+			c.Syslog.Index = v
+
+			return nil
+		},
+		func(c *Config) string { return c.Syslog.Index }},
+	{"LYNXDB_SYSLOG_SOURCETYPE", "syslog.sourcetype",
+		func(c *Config, v string) error {
+			c.Syslog.SourceType = v
+
+			return nil
+		},
+		func(c *Config) string { return c.Syslog.SourceType }},
+	{"LYNXDB_SYSLOG_USE_PEER_AS_SOURCE", "syslog.use_peer_as_source",
+		func(c *Config, v string) error {
+			b, err := strconv.ParseBool(v)
+			if err != nil {
+				return err
+			}
+			c.Syslog.UsePeerAsSource = b
+
+			return nil
+		},
+		func(c *Config) string { return strconv.FormatBool(c.Syslog.UsePeerAsSource) }},
+	{"LYNXDB_SYSLOG_MAX_MESSAGE_BYTES", "syslog.max_message_bytes",
+		func(c *Config, v string) error {
+			n, err := strconv.Atoi(v)
+			if err != nil {
+				return err
+			}
+			c.Syslog.MaxMessageBytes = n
+
+			return nil
+		},
+		func(c *Config) string { return strconv.Itoa(c.Syslog.MaxMessageBytes) }},
+	{"LYNXDB_SYSLOG_UDP_READ_BUFFER", "syslog.udp_read_buffer",
+		func(c *Config, v string) error {
+			b, err := ParseByteSize(v)
+			if err != nil {
+				return err
+			}
+			c.Syslog.UDPReadBuffer = b
+
+			return nil
+		},
+		func(c *Config) string { return c.Syslog.UDPReadBuffer.String() }},
+	{"LYNXDB_SYSLOG_TCP_IDLE_TIMEOUT", "syslog.tcp_idle_timeout",
+		func(c *Config, v string) error {
+			d, err := ParseDuration(v)
+			if err != nil {
+				return err
+			}
+			c.Syslog.TCPIdleTimeout = d
+
+			return nil
+		},
+		func(c *Config) string { return c.Syslog.TCPIdleTimeout.String() }},
+	{"LYNXDB_SYSLOG_TCP_MAX_CONNECTIONS", "syslog.tcp_max_connections",
+		func(c *Config, v string) error {
+			n, err := strconv.Atoi(v)
+			if err != nil {
+				return err
+			}
+			c.Syslog.TCPMaxConns = n
+
+			return nil
+		},
+		func(c *Config) string { return strconv.Itoa(c.Syslog.TCPMaxConns) }},
+	{"LYNXDB_SYSLOG_BATCH_SIZE", "syslog.batch_size",
+		func(c *Config, v string) error {
+			n, err := strconv.Atoi(v)
+			if err != nil {
+				return err
+			}
+			c.Syslog.BatchSize = n
+
+			return nil
+		},
+		func(c *Config) string { return strconv.Itoa(c.Syslog.BatchSize) }},
+	{"LYNXDB_SYSLOG_BATCH_TIMEOUT", "syslog.batch_timeout",
+		func(c *Config, v string) error {
+			d, err := ParseDuration(v)
+			if err != nil {
+				return err
+			}
+			c.Syslog.BatchTimeout = d
+
+			return nil
+		},
+		func(c *Config) string { return c.Syslog.BatchTimeout.String() }},
+
 	// Query — additional bindings
 	{"LYNXDB_QUERY_MAX_QUERY_RUNTIME", "query.max_query_runtime",
 		func(c *Config, v string) error {
