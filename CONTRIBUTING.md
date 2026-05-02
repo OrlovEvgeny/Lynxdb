@@ -33,7 +33,7 @@ Follow the same prefixes for commit messages:
 
 ```
 feat: add JOIN command to pipeline
-fix: WAL replay skips corrupted entries instead of panicking
+fix: batcher flush recovers gracefully from interrupted part writes
 chore: update roaring bitmap to v2.4
 ```
 

@@ -22,7 +22,7 @@ type Role int
 const (
 	// RoleMeta manages cluster metadata via Raft consensus.
 	RoleMeta Role = iota
-	// RoleIngest handles event ingestion and WAL writes.
+	// RoleIngest handles event ingestion and direct-to-part writes.
 	RoleIngest
 	// RoleQuery handles query execution (scatter-gather).
 	RoleQuery

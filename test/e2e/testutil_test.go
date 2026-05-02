@@ -138,9 +138,9 @@ func (h *Harness) stopServer() {
 		h.cancel = nil
 
 		// Wait for srv.Start() to return. Start() blocks on <-shutdownDone
-		// which is closed only after the engine flush + WAL close + registry
-		// sync complete. This guarantees all data is on disk before we
-		// potentially restart the server on the same data directory.
+		// which is closed only after the engine flush + registry sync complete.
+		// This guarantees all data is on disk before we potentially restart
+		// the server on the same data directory.
 		select {
 		case <-h.startDone:
 		case <-time.After(30 * time.Second):

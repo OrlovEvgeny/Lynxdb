@@ -11,8 +11,8 @@ import (
 // TestE2E_Persistence_DataSurvivesRestart ingests data to disk, restarts the
 // server, and verifies that all queries return identical results.
 //
-// Regression test for persistence bug (fixed). Verifies memtable flush + WAL
-// recovery preserve all events across restart for multiple indexes.
+// Regression test for persistence bug (fixed). Verifies that batcher flush
+// and atomic part writes preserve all events across restart for multiple indexes.
 func TestE2E_Persistence_DataSurvivesRestart(t *testing.T) {
 	h := NewHarness(t, WithDisk())
 	h.IngestFile("idx_ssh", "testdata/logs/OpenSSH_2k.log")
