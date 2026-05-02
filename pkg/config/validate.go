@@ -317,7 +317,7 @@ func (s *SyslogConfig) validate() error {
 			return validationErr("syslog", "default_timezone", s.DefaultTimezone, "must be Local or a valid IANA timezone")
 		}
 	}
-	if s.MaxMessageBytes < 1024 {
+	if s.MaxMessageBytes != 0 && s.MaxMessageBytes < 1024 {
 		return validationErr("syslog", "max_message_bytes", fmt.Sprintf("%d", s.MaxMessageBytes), "must be at least 1024 bytes")
 	}
 	if s.UDPReadBuffer < 0 {

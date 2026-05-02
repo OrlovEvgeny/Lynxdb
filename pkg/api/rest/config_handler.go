@@ -44,7 +44,7 @@ func (s *Server) handlePatchConfig(w http.ResponseWriter, r *http.Request) {
 			// Runtime adjustable, no restart needed.
 		case "listen":
 			// Known key but requires restart — will be flagged in the response.
-		case "query", "ingest", "storage", "http":
+		case "query", "ingest", "storage", "http", "syslog":
 			// Sub-configs are runtime adjustable.
 		default:
 			respondError(w, ErrCodeValidationError, http.StatusBadRequest, "unknown config key: "+key)
@@ -133,6 +133,11 @@ func (s *Server) ReloadConfig(updated *config.Config) ([]string, error) {
 	}
 	if s.queryService != nil {
 		s.queryService.ReloadConfig(updated.Query)
+	}
+	if s.syslogReceiver != nil {
+		if err := s.syslogReceiver.ReloadConfig(updated.Syslog); err != nil {
+			return nil, fmt.Errorf("reload syslog config: %w", err)
+		}
 	}
 	if s.logger != nil {
 		for _, field := range changes.RestartRequired {

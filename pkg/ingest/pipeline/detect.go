@@ -37,8 +37,8 @@ var logfmtRegex = regexp.MustCompile(`\w+=("(?:[^"\\]|\\.)*"|[^\s,]+)`)
 // combinedRegex matches Apache/Nginx combined log format.
 var combinedRegex = regexp.MustCompile(`^\S+ \S+ \S+ \[[^\]]+\] "[^"]+" \d+ \d+`)
 
-// syslogRegex matches RFC syslog format.
-var syslogRegex = regexp.MustCompile(`^<\d+>\w{3}\s+\d+\s+\d{2}:\d{2}:\d{2}\s+\S+\s+\S+`)
+// syslogRegex matches RFC 3164 and RFC 5424 syslog formats.
+var syslogRegex = regexp.MustCompile(`^<\d+>(?:\w{3}\s+\d+\s+\d{2}:\d{2}:\d{2}\s+\S+\s+\S+|[1-9]\s+\d{4}-\d{2}-\d{2}T\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+)`)
 
 // DetectFormat analyzes a sample of lines and returns the best detected format.
 // sampleLines should contain the first 10-20 lines of the data source.

@@ -318,6 +318,8 @@ func (b *Batcher) Batch(events []*event.Event) [][]*event.Event {
 }
 
 // SyslogParser extracts fields from syslog-formatted messages.
+//
+// Deprecated: use pkg/ingest/receiver/syslog for native RFC 3164/5424 parsing.
 type SyslogParser struct{}
 
 var syslogPattern = regexp.MustCompile(`^<(\d+)>(\w{3}\s+\d+\s+\d+:\d+:\d+)\s+(\S+)\s+(\S+?)(?:\[(\d+)\])?:\s*(.*)$`)
